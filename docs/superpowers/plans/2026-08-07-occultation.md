@@ -6641,6 +6641,28 @@ fn a_fleet_with_tcb_drift_reports_its_partition_sizes() {
     assert!(r.distinguishing_attributes.contains(&"pce_svn".to_string()));
 }
 
+/// The uniform fleet is the paper's control, so its report must not claim
+/// anything about singletons. `singletons > 0` -> `>= 0` survives the rest of
+/// the suite and makes that report say "0 host(s) are alone on their TCB
+/// configuration ... no credential scheme can help them", which is
+/// categorically false about the fleet the whole comparison rests on.
+#[test]
+fn a_uniform_fleets_report_makes_no_claim_about_singletons() {
+    let f = Fleet::load(Path::new("examples/fleet-uniform.toml")).unwrap();
+    let out = partition(&f).unwrap().render();
+    assert!(
+        !out.contains("alone on their TCB configuration"),
+        "a fleet with no singletons must not claim it has some:\n{out}"
+    );
+    assert!(out.contains("No TCB attribute varies"), "and it must say why:\n{out}");
+
+    // The converse, so neither sentence can simply be deleted.
+    let d = Fleet::load(Path::new("examples/fleet-drifted.toml")).unwrap();
+    let drifted = partition(&d).unwrap().render();
+    assert!(drifted.contains("alone on their TCB configuration"));
+    assert!(!drifted.contains("No TCB attribute varies"));
+}
+
 /// The policy exit code, so the check drops into a CI pipeline.
 #[test]
 fn a_minimum_set_size_policy_is_enforceable() {
