@@ -17,6 +17,7 @@
 - **Every reported number carries a `Source`.** `Source::MeasuredHere { iters }` or `Source::Published { citation }`. There is no way to construct a `Measurement` without one. A published figure renders with the word `PUBLISHED` and its citation; it is never presented as something this tool measured.
 - **Modelled components provide no security and must be impossible to mistake for real.** Four independent barriers, all asserted by test: (1) a modelled implementation cannot be constructed without a `ModelledPermit`, which only `--allow-modelled` produces; (2) `AttestationVerdict::Valid` is unreachable from a modelled implementation — it returns `ModelledNoSecurity`; (3) every modelled invocation emits `log::warn!`; (4) every value it produces carries `Provenance::Modelled` and the report layer renders `MODELLED` beside it.
 - **Blinding-factor reuse is a security invariant, not a tuning choice.** The pool stalls on exhaustion. There is no reuse option, no flag, no config key. `PoolItem` is not `Clone` and is consumed by value, so reuse is unrepresentable through the public API.
+- **Any field that participates in a value's identity is load-bearing for every comparison downstream.** Wherever this tool derives an identity — a TCB fingerprint, a pool item's fingerprint, a Fiat-Shamir challenge preimage, a signature domain — the derivation must be written down explicitly, must cover every field that ought to distinguish two values, and must be tested both ways: semantically identical inputs compare **equal**, and inputs differing in any one contributing field compare **unequal**. A partial derivation is invisible in a passing test suite and silently merges values that are not the same.
 - **RNG is seeded and deterministic.** `rand_chacha::ChaCha20Rng` seeded from `--seed` (default 7) everywhere. No `thread_rng` in library code — a benchmark that cannot be rerun to the same numbers is not a measurement.
 - **Dependency pin, and why:** `blstrs` 0.7 pins `ff`/`group` 0.13, which are built on `rand_core` **0.6**. `ed25519-dalek` **3.x** requires `rand_core` **0.9**. Both in one crate puts two incompatible `RngCore` traits in scope and fails to compile. Pin `ed25519-dalek = "2"` with feature `rand_core`. Verified by compiling both together.
 - Library errors use `thiserror`; the binary uses `anyhow`.
@@ -99,7 +100,7 @@ Verified before planning, not discovered in Task 6.
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `occultation::cost::{Source, Measurement, BudgetVerdict, Composed, CostProfile, BUDGET, compose}`. `Measurement::new(label, cost, source)` is the only constructor. `CostProfile::desk_study()` returns the published P05 figures, each carrying its citation. `compose(present, verify) -> Composed` sums the two halves and judges the sum against `BUDGET`.
+- Produces: `occultation::cost::{Source, Measurement, BudgetVerdict, Composed, CostProfile, BUDGET, compose, judge, fmt_ms}`. `Measurement::new(label, cost, source)` is the only constructor. `CostProfile::desk_study()` returns the published P05 figures, each carrying its citation. `compose(present, verify) -> Composed` sums the two halves and judges the sum against `BUDGET`.
 
 This task fixes the discipline the whole tool rests on: a number cannot exist without saying where it came from, and a budget verdict cannot be issued against half a path.
 
@@ -347,16 +348,18 @@ pub enum BudgetVerdict {
 impl std::fmt::Display for BudgetVerdict {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BudgetVerdict::Misses { over } => write!(f, "MISSES by {}", us(*over)),
+            BudgetVerdict::Misses { over } => write!(f, "MISSES by {}", fmt_ms(*over)),
             BudgetVerdict::Marginal { headroom } => {
-                write!(f, "MARGINAL — {} of headroom, which is none", us(*headroom))
+                write!(f, "MARGINAL — {} spare, which is not headroom", fmt_ms(*headroom))
             }
-            BudgetVerdict::Fits { headroom } => write!(f, "fits, {} spare", us(*headroom)),
+            BudgetVerdict::Fits { headroom } => write!(f, "fits, {} spare", fmt_ms(*headroom)),
         }
     }
 }
 
-pub fn us(d: Duration) -> String {
+/// Render a duration in milliseconds, which is the unit the 15 ms budget is
+/// quoted in and therefore the unit every verdict should read in.
+pub fn fmt_ms(d: Duration) -> String {
     format!("{:.2} ms", d.as_secs_f64() * 1e3)
 }
 
@@ -510,7 +513,7 @@ This product includes the paper in paper/, which is covered by the same
 licence as the source.
 ```
 
-Create `README.md`. The distinction leads; nothing precedes it but the one-line description.
+Create `README.md`. The distinction leads: nothing precedes it but the one-line description and the line naming the paper.
 
 ```markdown
 # occultation
@@ -3447,7 +3450,7 @@ Expected: FAIL — `cannot find function composed_report in this scope`.
 Append to `src/bench.rs` (above the test module):
 
 ```rust
-use crate::cost::{compose, us, Composed, CostProfile};
+use crate::cost::{compose, fmt_ms, Composed, CostProfile};
 
 /// One composition of a present-and-verify path, judged as a whole.
 #[derive(Debug)]
@@ -3563,7 +3566,7 @@ impl ComposedReport {
              error is unaffected:\nit is an error in arithmetic, not in hardware. \
              Composed BBS+ costs {:.0}x an\nEd25519 sign-and-verify round trip of {} here.\n",
             self.measured_ratio,
-            us(self.baseline_round_trip)
+            fmt_ms(self.baseline_round_trip)
         ));
         out
     }
@@ -3577,9 +3580,9 @@ impl ComposedReport {
             out.push_str(&format!(
                 "  {:<46} {:>10} {:>10} {:>10}  {}\n",
                 r.label,
-                us(r.composed.present),
-                us(r.composed.verify),
-                us(r.composed.total),
+                fmt_ms(r.composed.present),
+                fmt_ms(r.composed.verify),
+                fmt_ms(r.composed.total),
                 r.composed.verdict
             ));
             if let Some(n) = &r.note {
@@ -3848,6 +3851,45 @@ mod tests {
         assert_eq!(p.issued(), 500);
     }
 
+    /// The identity-derivation check. A fingerprint that ignored a field
+    /// would let the uniqueness audit pass while that field was reused.
+    #[test]
+    fn a_change_in_any_single_scalar_changes_the_fingerprint() {
+        let base = ProofScalars::random(&mut ChaCha20Rng::seed_from_u64(1), 3);
+        let item = PoolItem::for_test(base.clone());
+        let reference = item.fingerprint();
+
+        // Semantically identical input must compare equal.
+        assert_eq!(PoolItem::for_test(base.clone()).fingerprint(), reference);
+
+        // And every contributing field must be able to break that equality.
+        let bump = Scalar::from(7u64);
+        let mutations: Vec<(&str, ProofScalars)> = vec![
+            ("r1", ProofScalars { r1: base.r1 + bump, ..base.clone() }),
+            ("r2", ProofScalars { r2: base.r2 + bump, ..base.clone() }),
+            ("e_tilde", ProofScalars { e_tilde: base.e_tilde + bump, ..base.clone() }),
+            ("r1_tilde", ProofScalars { r1_tilde: base.r1_tilde + bump, ..base.clone() }),
+            ("r3_tilde", ProofScalars { r3_tilde: base.r3_tilde + bump, ..base.clone() }),
+            ("m_tilde[0]", {
+                let mut s = base.clone();
+                s.m_tilde[0] += bump;
+                s
+            }),
+            ("m_tilde[2]", {
+                let mut s = base.clone();
+                s.m_tilde[2] += bump;
+                s
+            }),
+        ];
+        for (field, mutated) in mutations {
+            assert_ne!(
+                PoolItem::for_test(mutated).fingerprint(),
+                reference,
+                "the fingerprint ignores `{field}`, so the reuse audit cannot see it change"
+            );
+        }
+    }
+
     #[test]
     fn refilling_a_full_pool_produces_nothing() {
         let mut p = PrecomputationPool::new(3, 1, 7);
@@ -4019,6 +4061,7 @@ Prepend to `src/pool.rs`:
 ```rust
 use crate::bbs::proof::ProofScalars;
 use rand_chacha::ChaCha20Rng;
+use sha2::{Digest, Sha256};
 use rand_core::SeedableRng;
 use serde::Serialize;
 use std::collections::{HashSet, VecDeque};
@@ -4062,14 +4105,37 @@ impl PoolItem {
     }
 
     /// A stable identifier for the item's blinding, for the uniqueness audit.
-    /// Derived from `r1`, which is the scalar whose repetition would be
-    /// immediately observable as a repeated `Abar`.
+    ///
+    /// Covers **every** scalar in the item, not just `r1`. The audit's whole
+    /// job is to notice a repeat, and a fingerprint derived from one of six
+    /// fields would pass while five of them were being reused — a partial
+    /// derivation is invisible in a passing test. Domain-separated and
+    /// length-prefixed for the same reason `octets` is.
     pub fn fingerprint(&self) -> [u8; 32] {
-        self.scalars.r1.to_bytes_be()
+        let mut parts: Vec<Vec<u8>> = vec![
+            self.scalars.r1.to_bytes_be().to_vec(),
+            self.scalars.r2.to_bytes_be().to_vec(),
+            self.scalars.e_tilde.to_bytes_be().to_vec(),
+            self.scalars.r1_tilde.to_bytes_be().to_vec(),
+            self.scalars.r3_tilde.to_bytes_be().to_vec(),
+        ];
+        for m in &self.scalars.m_tilde {
+            parts.push(m.to_bytes_be().to_vec());
+        }
+        let refs: Vec<&[u8]> = parts.iter().map(|p| p.as_slice()).collect();
+        Sha256::digest(crate::bls::octets(&refs)).into()
     }
 
     pub fn serial(&self) -> u64 {
         self.serial
+    }
+
+    /// Build an item from known scalars, so the fingerprint derivation can be
+    /// mutation-tested. Test-only: outside tests, the pool is the only source
+    /// of items, which is what makes reuse unrepresentable.
+    #[cfg(test)]
+    pub(crate) fn for_test(scalars: ProofScalars) -> Self {
+        PoolItem { scalars, serial: 0 }
     }
 }
 
@@ -4823,6 +4889,51 @@ alpha = "1"
     }
 
     #[test]
+    fn tcb_values_are_compared_as_opaque_bytes_without_normalization() {
+        // Stated behaviour, pinned: differing case is a differing
+        // configuration. If this ever changes it must change deliberately,
+        // because merging two populations overstates the anonymity set.
+        let src = r#"
+name = "case"
+[[host]]
+id = "a"
+[host.tcb]
+cpu_svn = "0x0e"
+[[host]]
+id = "b"
+[host.tcb]
+cpu_svn = "0x0E"
+"#;
+        let f: Fleet = toml::from_str(src).unwrap();
+        assert_eq!(partition(&f).unwrap().partitions.len(), 2);
+    }
+
+    #[test]
+    fn every_tcb_attribute_contributes_to_the_partition_identity() {
+        // A fingerprint that dropped a field would silently merge two
+        // distinguishable populations. Vary one attribute at a time and
+        // require each to split the fleet.
+        let fields = ["tdx_module", "cpu_svn", "pce_svn", "microcode", "qe_identity"];
+        for varied in fields {
+            let host = |id: &str, value: &str| {
+                let mut lines = format!("[[host]]\nid = \"{id}\"\n[host.tcb]\n");
+                for f in fields {
+                    let v = if f == varied { value } else { "same" };
+                    lines.push_str(&format!("{f} = \"{v}\"\n"));
+                }
+                lines
+            };
+            let src = format!("name = \"vary\"\n{}{}", host("a", "one"), host("b", "two"));
+            let f: Fleet = toml::from_str(&src).unwrap();
+            assert_eq!(
+                partition(&f).unwrap().partitions.len(),
+                2,
+                "varying `{varied}` did not split the fleet, so it is missing from the fingerprint"
+            );
+        }
+    }
+
+    #[test]
     fn a_host_missing_an_attribute_others_declare_is_its_own_partition() {
         // Absent is not the same as equal. A host whose quote omits a field
         // is distinguishable from one that reports it.
@@ -4993,9 +5104,21 @@ pub struct AnonymityReport {
     pub distinguishing_attributes: Vec<String>,
 }
 
-/// Canonical, unambiguous rendering of a TCB map. `BTreeMap` sorts the keys,
-/// so TOML table order cannot manufacture a partition, and the separators are
-/// length-prefixed so `{a: "b=c"}` cannot collide with `{a: "b", c: ""}`.
+/// Canonical, unambiguous rendering of a TCB map — this string **is** a
+/// partition's identity, so every attribute in the map contributes to it and
+/// the derivation is spelled out here rather than left to a reader.
+///
+/// `BTreeMap` sorts the keys, so TOML table order cannot manufacture a
+/// partition. The separators are length-prefixed so `{a: "b=c"}` cannot
+/// collide with `{a: "b", c: ""}`.
+///
+/// Values are compared as **opaque byte strings**. `"0x0E"` and `"0x0e"` are
+/// different configurations here, as are `"13"` and `"013"`. That is a choice,
+/// not an oversight: these strings come from quote collateral, and normalizing
+/// them would mean deciding which textual differences a relying party's parser
+/// ignores — which this tool cannot know, and guessing wrong would merge two
+/// genuinely distinguishable populations into one and overstate the anonymity
+/// set. Normalize upstream if your collateral needs it.
 fn fingerprint(tcb: &BTreeMap<String, String>) -> String {
     tcb.iter()
         .map(|(k, v)| format!("{}:{k}={}:{v}", k.len(), v.len()))
