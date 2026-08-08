@@ -2469,6 +2469,48 @@ mod tests {
         assert!(!verify(&kp.pk, &wider, HEADER, &wider_msgs, &sig).unwrap());
     }
 
+    /// `calculate_domain` is called identically by `sign` and `verify`, so an
+    /// error in it is symmetric and invisible to every round-trip test. This
+    /// tests the derivation directly.
+    ///
+    /// The specific gap it closes: neutralizing the public key's contribution
+    /// to the domain survives the whole suite, because
+    /// `another_issuers_key_fails` is overdetermined — the pairing check has
+    /// an independent `W` term that fails first, so it never exercises the
+    /// domain's binding of the key at all.
+    #[test]
+    fn calculate_domain_binds_every_field_independently() {
+        let kp = KeyPair::generate(7);
+        let other = KeyPair::generate(8);
+        let gens = Generators::create(3);
+        let header = b"a header";
+
+        let base = calculate_domain(&kp.pk, &gens, header).unwrap();
+        assert_eq!(calculate_domain(&kp.pk, &gens, header).unwrap(), base);
+
+        assert_ne!(
+            calculate_domain(&other.pk, &gens, header).unwrap(),
+            base,
+            "the public key must participate in the domain, not only in the pairing check"
+        );
+        assert_ne!(
+            calculate_domain(&kp.pk, &gens, b"a different header").unwrap(),
+            base
+        );
+
+        let mut tweaked = gens.clone();
+        tweaked.p1 += G1Projective::generator();
+        assert_ne!(calculate_domain(&kp.pk, &tweaked, header).unwrap(), base);
+
+        let mut tweaked = gens.clone();
+        tweaked.q1 += G1Projective::generator();
+        assert_ne!(calculate_domain(&kp.pk, &tweaked, header).unwrap(), base);
+
+        let mut tweaked = gens.clone();
+        tweaked.h[1] += G1Projective::generator();
+        assert_ne!(calculate_domain(&kp.pk, &tweaked, header).unwrap(), base);
+    }
+
     #[test]
     fn signing_is_deterministic_for_the_same_inputs() {
         let (kp, gens, msgs) = fixture(3);
@@ -2728,7 +2770,7 @@ Update `src/lib.rs` to add `pub mod bbs;`.
 - [ ] **Step 6: Run the tests to verify they pass**
 
 Run: `cargo test --lib bbs`
-Expected: PASS, 13 tests.
+Expected: PASS, 14 tests.
 
 - [ ] **Step 7: Commit**
 
