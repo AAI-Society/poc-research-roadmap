@@ -108,8 +108,17 @@ hypothesis to be tested rather than a result to be cited.
 | Outcome | Share | Examples |
 | --- | --- | --- |
 | **Qualified** — satisfies C1–C4 as specified | 4 / 24 (17%) | ISO 20022 `pain.001`; AWS S3 `PUT` with `If-Match`; GitHub contents API with parent SHA; Vault check-and-set |
-| **Conditional** — qualifies only if the client volunteers explicit idempotency keys, fully-qualified identifiers and complete parameter structs | 6 / 24 (25%) | Stripe charges, AWS `RunInstances`, GCP `instances.insert`, Azure ARM, Docker create, Pinecone upsert |
-| **Non-qualifying** — fails both idempotency and parameter completeness | 14 / 24 (58%) | GitHub repo create, Google Calendar events, Gmail send, MS Graph `sendMail`, Slack `chat.postMessage`, Jira, Salesforce, HubSpot, Okta, Auth0, GitLab, Cloudflare DNS, Plaid |
+| **Conditional** — qualifies only if the client volunteers explicit idempotency keys, fully-qualified identifiers and complete parameter structs | 7 / 24 (29%) | Stripe charges, Square payments, AWS `RunInstances`, GCP `instances.insert`, Azure ARM, Docker create, Pinecone upsert |
+| **Non-qualifying** — fails both idempotency and parameter completeness | 13 / 24 (54%) | GitHub repo create, Google Calendar events, Gmail send, MS Graph `sendMail`, Slack `chat.postMessage`, Jira, Salesforce, HubSpot, Okta, Auth0, GitLab, Cloudflare DNS, Plaid |
+
+> **Corrected against the desk study's own table.** Earlier drafts of this
+> section reported 4 / 6 / 14 (17% / 25% / 58%), taking the figures from the
+> desk study's prose. Counting its 24-row table gives 4 / 7 / 13: Square
+> `POST /v2/payments` is classified Conditional in the table, is missing from
+> the prose's Conditional count, and is absorbed into the Non-qualifying
+> share instead. The table's own example lists show it — six Conditional
+> examples against a claimed six, thirteen Non-qualifying examples against a
+> claimed fourteen. The rows are sound; the arithmetic over them was not.
 
 If this survives live verification, the conclusion is stark and directly actionable: **the majority
 of endpoints agents actually call cannot support an effect-binding claim at all**, and the four
@@ -120,7 +129,7 @@ recommendation, derived rather than asserted.
 Note the sampling caveat honestly: 24 endpoints chosen for sector coverage is a convenience sample,
 and "SaaS productivity APIs are worse than financial messaging" is close to a foregone conclusion.
 The paper should either enlarge and randomize the sample or reframe the survey as a structured
-taxonomy with illustrative cases, and not present 58% as a population estimate.
+taxonomy with illustrative cases, and not present 54% as a population estimate.
 
 ## The adversarial surface
 
@@ -173,7 +182,7 @@ open:
    to be bindable, what does a relying party do about the endpoints that never will? Options are
    the attested enforcement point, a trusted intermediary that normalizes, or accepting a lower
    tier. Their relative strength is unanalysed.
-4. **What replaces binding for the 58%.** If most endpoints cannot qualify, the standard's honest
+4. **What replaces binding for the 54%.** If most endpoints cannot qualify, the standard's honest
    position is that only Tier 1–2 claims are available for them. That is a consequential result and
    the standard should say it plainly rather than let implementers assume otherwise.
 5. **Composition across multi-step agent workflows.** Every condition above is stated for a single
