@@ -4459,7 +4459,9 @@ pub fn composed_report(costs: &PrimitiveCosts) -> ComposedReport {
             label: "pool (ESTIMATED) + cached pairings".into(),
             composed: compose(pooled_estimate, verify_cached),
             origin: RowOrigin::Estimated {
-                basis: "two hash-to-scalar operations; `occultation pool` measures it properly",
+                basis: "two hash-to-scalar operations. `occultation pool` does NOT measure \
+                        this — its own default online cost is the same proxy. Nothing in \
+                        this tool measures a pooled presentation yet",
             },
             note: Some(
                 "The pooled presentation here is a crude estimate, not a measurement, \
@@ -6751,6 +6753,40 @@ fn the_same_command_succeeds_with_allow_modelled_and_warns_loudly() {
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.contains("MODELLED"), "the warning must reach stderr: {stderr}");
     assert!(stderr.contains("no security"));
+
+    // The flag's actual EFFECT, not just its acknowledgement. Both stderr
+    // assertions above come from the MODELLED_WARNING banner, which any
+    // --allow-modelled run prints whether or not escrow was requested — so
+    // without this, replacing the escrow threading with `None` leaves the
+    // whole suite green and the flag is silently inert.
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("+ MODELLED escrow tag"),
+        "the composed rows must show the escrow tag was folded in: {stdout}"
+    );
+}
+
+/// And the converse: without `--with-escrow` the escrow tag must NOT be in
+/// the composed path, and the rows must say what they exclude.
+#[test]
+fn without_with_escrow_the_composed_path_says_what_it_leaves_out() {
+    let out = occultation()
+        .args(["bench", "--composed", "--iters", "3"])
+        .output()
+        .expect("the binary runs");
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(!stdout.contains("+ MODELLED escrow tag"));
+    assert!(
+        stdout.contains("excludes the escrow tag"),
+        "a composed path missing a third of its presentation cost must say so: {stdout}"
+    );
+    // And the estimated row must keep its own caveat rather than having it
+    // overwritten by the escrow note.
+    assert!(
+        stdout.contains("almost certainly too low"),
+        "the estimated row's caveat must survive: {stdout}"
+    );
 }
 
 #[test]
@@ -6820,11 +6856,18 @@ pub fn composed_report_with(
         }
         None => {
             for row in &mut report.measured {
-                row.note = Some(
-                    "excludes the escrow tag, which is modelled; the desk study \
-                     attributes 4.6 ms (33%) of presentation to it"
-                        .into(),
-                );
+                // Append, never replace. The estimated pooled row's note is the
+                // only place a table reader learns its figure is a crude proxy
+                // that is almost certainly too low — the renderer does not
+                // print `origin.basis` — and overwriting it here silently
+                // stripped that caveat from every CLI run of the command the
+                // paper cites.
+                let escrow = "excludes the escrow tag, which is modelled; the desk study \
+                              attributes 4.6 ms (33%) of presentation to it";
+                row.note = Some(match row.note.take() {
+                    Some(existing) => format!("{existing} It also {escrow}."),
+                    None => escrow.to_string(),
+                });
             }
         }
     }
