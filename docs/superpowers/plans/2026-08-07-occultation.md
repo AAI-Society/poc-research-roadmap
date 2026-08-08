@@ -705,7 +705,7 @@ mod tests {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `cargo test --lib harness baseline`
+Run: `cargo test --lib harness && cargo test --lib baseline`
 Expected: FAIL — `cannot find function measure in this scope`.
 
 - [ ] **Step 3: Write the harness**
@@ -861,7 +861,7 @@ pub mod harness;
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `cargo test --lib harness baseline`
+Run: `cargo test --lib harness && cargo test --lib baseline`
 Expected: PASS, 9 tests.
 
 - [ ] **Step 6: Commit**
@@ -1067,7 +1067,7 @@ mod tests {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `cargo test --lib modelled ecdaa escrow`
+Run: `cargo test --lib modelled && cargo test --lib ecdaa && cargo test --lib escrow`
 Expected: FAIL — `cannot find type ModelledPermit in this scope`.
 
 - [ ] **Step 3: Write the boundary**
@@ -1375,7 +1375,7 @@ pub mod harness;
 pub mod modelled;
 ```
 
-Run: `cargo test --lib modelled ecdaa escrow`
+Run: `cargo test --lib modelled && cargo test --lib ecdaa && cargo test --lib escrow`
 Expected: PASS, 15 tests.
 
 - [ ] **Step 7: Commit**
