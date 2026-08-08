@@ -6085,7 +6085,12 @@ cpu_svn = "0x0E"
         // A fingerprint that dropped a field would silently merge two
         // distinguishable populations. Vary one attribute at a time and
         // require each to split the fleet.
-        let fields = ["tdx_module", "cpu_svn", "pce_svn", "microcode", "qe_identity"];
+        // All SIX attributes the shipped examples use. Omitting one — this
+        // list previously stopped at five — leaves the single test standing
+        // between the paper and an overstated anonymity set blind to exactly
+        // the kind of omission it exists to catch.
+        let fields =
+            ["tdx_module", "cpu_svn", "pce_svn", "microcode", "qe_identity", "pcs_chain"];
         for varied in fields {
             let host = |id: &str, value: &str| {
                 let mut lines = format!("[[host]]\nid = \"{id}\"\n[host.tcb]\n");
@@ -6355,7 +6360,10 @@ pub fn partition(fleet: &Fleet) -> Result<AnonymityReport, AnonymityError> {
         median_set: sorted[sorted.len() / 2],
         max_set: *sorted.last().expect("non-empty"),
         singletons: sizes.iter().filter(|&&s| s == 1).count(),
-        effective_set: sizes.iter().map(|&s| (s * s) as f64).sum::<f64>() / n,
+        // f64 before multiplying: `count = 5_000_000_000` in a user-supplied
+        // file would otherwise panic in debug and wrap in release, against
+        // the no-panics-on-malformed-input constraint.
+        effective_set: sizes.iter().map(|&s| (s as f64) * (s as f64)).sum::<f64>() / n,
         entropy_bits: -sizes
             .iter()
             .map(|&s| {
@@ -6385,7 +6393,9 @@ impl AnonymityReport {
             self.max_set,
             self.singletons,
             self.effective_set,
-            self.entropy_bits
+            // `+ 0.0` so a zero-leakage fleet does not print "-0.000 bits":
+            // the sum is negated, and the sign bit survives formatting.
+            self.entropy_bits + 0.0
         ));
 
         out.push_str(&format!("  {:<8} {:<10} {}\n", "SIZE", "GROUPS", "TCB CONFIGURATION"));
@@ -6410,8 +6420,16 @@ impl AnonymityReport {
                  partition it.\n",
             );
         } else {
+            // "that vary", not "doing the deanonymizing". The computation
+            // finds attributes taking more than one value, which is not the
+            // same as attributes that split anything the others do not
+            // already split — in the drifted example `pcs_chain` and
+            // `qe_identity` vary but partition nothing new, and an operator
+            // reading the stronger claim would remediate the wrong field.
             out.push_str(&format!(
-                "\nThe attributes doing the deanonymizing: {}.\n",
+                "\nThe attributes that vary across this fleet: {}.\n\
+                 (Varying is not the same as partitioning: some of these may split \
+                 nothing\nthat another attribute does not already split.)\n",
                 self.distinguishing_attributes.join(", ")
             ));
         }
@@ -6604,8 +6622,19 @@ fn a_fleet_with_tcb_drift_reports_its_partition_sizes() {
     assert_eq!(r.min_set, 1);
     assert_eq!(r.max_set, 71);
     assert_eq!(r.singletons, 1);
-    assert!(r.effective_set < 60.0, "effective set collapsed to {}", r.effective_set);
-    assert!(r.entropy_bits > 1.0);
+    // Pinned to the value, not to a bound. `> 1.0` is cleared by a natural-log
+    // substitution at 1.019 — a 1.9% margin — so the paper's "1.470 bits" and
+    // the word "bits" itself would be a figure no test could notice changing.
+    assert!(
+        (r.effective_set - 6328.0 / 120.0).abs() < 1e-9,
+        "effective set {} (expected sum(n^2)/N = 52.7333)",
+        r.effective_set
+    );
+    assert!(
+        (r.entropy_bits - 1.470_103_8).abs() < 1e-6,
+        "entropy {} bits (expected 1.4701038; log2, not ln)",
+        r.entropy_bits
+    );
 
     // And it must say which attributes did it, or an operator cannot act.
     assert!(r.distinguishing_attributes.contains(&"microcode".to_string()));
