@@ -31,8 +31,10 @@ single measurement:
 | The cloud operator | the host does not extract domain memory outside the TDX threat model; the firmware measured into RTMRs is what it claims | deceptive measurement injection at boot; side-channel extraction | never |
 | Whoever publishes reference values | the MRTD compared against belongs to the code you believe it does | valid attestation of subverted software inside a genuine TD | never |
 
-The fourth column is new and is the point. Three of five assumptions have **no detection mechanism
-at all** — their violation is silent and permanent. Anchoring the evidence log removes **none** of
+The fourth column is new and is the point. **Four of the five** assumptions have **no detection
+mechanism at all** — their violation is silent and permanent. Only the certification service's
+collateral is checked on a schedule, and that schedule is the one thing in the table an operator
+can shorten. Anchoring the evidence log removes **none** of
 these. It makes the *history* publicly auditable — a real and valuable property — while the
 *measurement* still rests on that chain. The tier ladder conflates two things a careful reader will
 separate: **public verifiability** (anyone may check, with published tools) and **trust
