@@ -1748,7 +1748,7 @@ EOF
 
 **Interfaces:**
 - Consumes: nothing from prior tasks.
-- Produces: `bls::{BlsError, expand_message_xmd, hash_to_scalar, octets, create_generators, Generators, PreparedIssuer, API_ID, neg_p2}`. `Generators { p1: G1Projective, q1: G1Projective, h: Vec<G1Projective> }` with `Generators::create(count: usize) -> Generators` and `Generators::b(&self, domain: Scalar, msgs: &[Scalar]) -> Result<G1Projective, BlsError>`. `PreparedIssuer::new(pk: &G2Projective) -> PreparedIssuer` holding `G2Prepared` for `W` and for `-P2`, which is the cached-pairing pre-computation the desk study describes.
+- Produces: `bls::{BlsError, MAX_ELL, API_ID, expand_message_xmd, reduce_be_bytes, hash_to_scalar, octets, Generators, PreparedIssuer, neg_p2}`. Note there is no free `create_generators` function — generators come from the associated `Generators::create(count)`. `Generators { p1: G1Projective, q1: G1Projective, h: Vec<G1Projective> }` with `Generators::create(count: usize) -> Generators` and `Generators::b(&self, domain: Scalar, msgs: &[Scalar]) -> Result<G1Projective, BlsError>`. `PreparedIssuer::new(pk: &G2Projective) -> PreparedIssuer` holding `G2Prepared` for `W` and for `-P2`, which is the cached-pairing pre-computation the desk study describes.
 
 `blstrs` has no `hash_to_scalar` and no wide reduction, so both are built here. The `expand_message_xmd` test vectors below are taken from the CFRG hash-to-curve working group's own vector file and **have been executed against this exact implementation** — they pass. Do not paraphrase them; if a value here disagrees with RFC 9380 Appendix K.1, the RFC wins and the plan is wrong.
 
