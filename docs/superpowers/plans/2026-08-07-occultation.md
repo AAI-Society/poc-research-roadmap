@@ -1096,9 +1096,13 @@ mod tests {
         ModelledEcdaa::new(ModelledPermit::from_flag(true).unwrap())
     }
 
+    /// `const _: () = assert!(..)` rather than a runtime `assert!`: a bare
+    /// `assert!` on a constant is both a clippy lint and a weaker check.
+    /// This form fails to *compile* if `MODELLED` is ever flipped to false,
+    /// which is the guarantee worth having for a security barrier.
     #[test]
     fn it_declares_itself_modelled() {
-        assert!(ModelledEcdaa::MODELLED);
+        const _: () = assert!(ModelledEcdaa::MODELLED);
         assert!(matches!(stub().provenance(), Provenance::Modelled { .. }));
     }
 
@@ -1150,9 +1154,11 @@ mod tests {
         ModelledThresholdElGamal::new(ModelledPermit::from_flag(true).unwrap(), k, n)
     }
 
+    /// Compile-time, for the same reason as in `ecdaa.rs`: flipping
+    /// `MODELLED` to false must break the build, not just a test run.
     #[test]
     fn it_declares_itself_modelled() {
-        assert!(ModelledThresholdElGamal::MODELLED);
+        const _: () = assert!(ModelledThresholdElGamal::MODELLED);
         assert!(matches!(stub(3, 5).unwrap().provenance(), Provenance::Modelled { .. }));
     }
 
@@ -1212,10 +1218,10 @@ use serde::Serialize;
 /// modelled invocation.
 pub const MODELLED_WARNING: &str = "\
 WARNING: MODELLED COMPONENT IN USE. ECDAA and threshold ElGamal escrow are
-stubs. They provide no anonymity, no soundness, no confidentiality and no
-accountability. Their cost profile is representative; nothing else about them
-is. Any result depending on them is an estimate of cost, not evidence of
-security.";
+stubs providing no security: no anonymity, no soundness, no confidentiality
+and no accountability. Their cost profile is representative; nothing else
+about them is. Any result depending on them is an estimate of cost, not
+evidence of security.";
 
 #[derive(Debug, thiserror::Error)]
 pub enum ModelledError {
