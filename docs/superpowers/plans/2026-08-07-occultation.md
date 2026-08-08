@@ -95,6 +95,7 @@ Verified before planning, not discovered in Task 6.
 **Files:**
 - Create: `Cargo.toml`, `src/lib.rs`, `src/cost.rs`, `src/bin/occultation.rs`
 - Create: `README.md`, `LICENSE`, `NOTICE`, `.gitignore`, `.github/workflows/ci.yml`
+- Create: `benches/primitives.rs` as a one-line `fn main() {}` placeholder. Cargo refuses to parse a manifest whose `[[bench]]` target names a file that does not exist, so declaring the bench here means the file must exist here too. The real benchmarks arrive in Task 12.
 
 **Interfaces:**
 - Consumes: nothing.
@@ -157,7 +158,7 @@ criterion = "0.8"
 
 [[bench]]
 name = "primitives"
-harness = false
+harness = false          # the file must exist for this to parse; see Files above
 
 [profile.release]
 debug = true          # benchmarks are worth profiling
@@ -5357,7 +5358,8 @@ EOF
 ### Task 12: The modelled gate at the CLI, results, and the no-panic guarantee
 
 **Files:**
-- Create: `tests/robustness.rs`, `results/README.md`, `scripts/regen-results.sh`, `benches/primitives.rs`
+- Create: `tests/robustness.rs`, `results/README.md`, `scripts/regen-results.sh`
+- Replace: `benches/primitives.rs` (a `fn main() {}` placeholder since Task 1)
 - Modify: `src/bench.rs`, `src/bin/occultation.rs`, `tests/acceptance.rs`, `.github/workflows/ci.yml`, `README.md`
 
 **Interfaces:**
@@ -5633,7 +5635,7 @@ Expected: PASS, 6 tests, no panics. If `bad_bench_options_error_rather_than_pani
 
 - [ ] **Step 6: Write the criterion benchmarks**
 
-Create `benches/primitives.rs`. These are for developers optimizing the code; `occultation bench` is the artifact the paper cites. Both must exist, and the README says which is which.
+Replace the `fn main() {}` placeholder in `benches/primitives.rs`. These are for developers optimizing the code; `occultation bench` is the artifact the paper cites. Both must exist, and the README says which is which.
 
 ```rust
 use criterion::{criterion_group, criterion_main, Criterion};
