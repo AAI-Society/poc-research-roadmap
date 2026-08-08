@@ -4947,6 +4947,8 @@ mod tests {
         assert!(!r.exhausted, "a pool refilling faster than it drains cannot exhaust");
         assert_eq!(r.stalled, 0);
         assert_eq!(r.stall_max, Duration::ZERO);
+        // No stall means no side channel: every response costs the same.
+        assert!((r.amplification - 1.0).abs() < 1e-9, "amplification {}", r.amplification);
     }
 
     #[test]
@@ -4969,8 +4971,9 @@ mod tests {
 
     #[test]
     fn the_stall_grows_through_a_sustained_burst() {
-        // The side channel: latency is not merely worse under load, it climbs,
-        // so an observer can read burst length off response times.
+        // The side channel: latency is not merely worse under load, it climbs
+        // for as long as the burst lasts, so an observer can read the agent's
+        // load — and the burst's duration — off response times alone.
         let cfg = BurstConfig {
             capacity: 32,
             refill_cost: Duration::from_micros(1_000),
@@ -4980,8 +4983,23 @@ mod tests {
             seed: 7,
         };
         let r = simulate_burst(&cfg).unwrap();
-        assert!(r.latency_max > r.latency_p50 * 10, "amplification {}", r.amplification);
-        assert!(r.amplification > 10.0);
+
+        // Growth, not merely a constant penalty: the median request waits far
+        // less than the last one. In a queue whose backlog grows linearly the
+        // median lands near half the maximum, so this ratio is bounded by
+        // about 2 by construction — assert the growth, but do not treat this
+        // ratio as the side-channel measure.
+        assert!(r.latency_max > r.latency_p50, "the stall must grow, not plateau");
+        assert!(r.latency_p99 > r.latency_p50);
+
+        // The side channel itself, measured against an idle response rather
+        // than a median that is already stalled.
+        assert!(
+            r.amplification > 100.0,
+            "the worst response was only {:.1}x an idle one",
+            r.amplification
+        );
+        assert!(r.stall_max > Duration::from_millis(100), "stall_max {:?}", r.stall_max);
     }
 
     #[test]
@@ -5248,8 +5266,15 @@ pub struct BurstReport {
     pub latency_p95: Duration,
     pub latency_p99: Duration,
     pub latency_max: Duration,
-    /// `latency_max / latency_p50`. How far a busy agent's response time
-    /// departs from its idle one — the size of the timing side channel.
+    /// `latency_max / online_cost`: how far the busiest response departs from
+    /// an idle one, which is the size of the timing side channel.
+    ///
+    /// The denominator is the **unstalled** cost, deliberately. An earlier
+    /// version divided by `latency_p50`, which is wrong for the case that
+    /// matters: under a sustained burst the queue grows linearly, so the
+    /// median stall is about half the maximum and the ratio saturates near
+    /// 2.0 however bad the backlog gets. A metric that reports 2.0 whether
+    /// the worst response is 2 ms or 6 s does not measure a side channel.
     pub amplification: f64,
     pub distinct_blinding_factors: usize,
     /// Always zero. Present so the report says so out loud, and computed from
@@ -5352,10 +5377,10 @@ pub fn simulate_burst(cfg: &BurstConfig) -> Result<BurstReport, PoolError> {
         latency_p95: pick(0.95),
         latency_p99: pick(0.99),
         latency_max,
-        amplification: if p50.is_zero() {
+        amplification: if cfg.online_cost.is_zero() {
             1.0
         } else {
-            latency_max.as_secs_f64() / p50.as_secs_f64()
+            latency_max.as_secs_f64() / cfg.online_cost.as_secs_f64()
         },
         distinct_blinding_factors: fingerprints.len(),
         reuse_events: requests - fingerprints.len(),
@@ -5510,7 +5535,10 @@ impl BurstReport {
              signature scalar and every undisclosed attribute by subtraction.\n\n\
              Stalling is not free either. The amplification figure above is the size of the\n\
              timing side channel: how far a busy agent's response time departs from its idle\n\
-             one, and therefore how much of its load an observer can read off latency alone.\n",
+             one, and therefore how much of its load an observer can read off latency alone.\n\n\
+             The stall does not plateau. While arrivals outrun refill the backlog grows, so\n\
+             each successive request waits longer than the last and the delay tracks the\n\
+             burst's duration — which is what makes it readable rather than merely costly.\n",
         );
         out
     }
@@ -5637,7 +5665,11 @@ fn a_burst_above_the_refill_rate_exhausts_and_stalls_without_reusing() {
 
     // And the cost of stalling, which is the finding: latency under load is a
     // side channel, not merely a slowdown.
-    assert!(r.amplification > 5.0, "amplification was only {:.1}x", r.amplification);
+    assert!(
+        r.amplification > 100.0,
+        "the busiest response was only {:.1}x an idle one",
+        r.amplification
+    );
 }
 
 /// The invariant again, at the level of the pool itself rather than the
