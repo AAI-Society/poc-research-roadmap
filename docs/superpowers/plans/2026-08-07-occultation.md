@@ -5367,6 +5367,19 @@ pub struct BurstReport {
     /// the issued fingerprints rather than asserted, so it would catch a pool
     /// that started handing items out twice.
     pub reuse_events: usize,
+    /// The cost of a presentation served straight from the pool — the
+    /// denominator of `amplification`.
+    ///
+    /// Carried on the report, not left in the config, because a headline
+    /// figure whose denominator is not on the page cannot be audited from the
+    /// page. Without it a reader dividing the printed `latency_max` by the
+    /// stderr line's two-decimal `0.01 ms` lands 43% away from the printed
+    /// amplification and concludes the tool is wrong.
+    pub online_cost: Duration,
+    /// The window the peak figures were observed over. Reported rather than
+    /// reconstructed from `requests / burst_rate_hz`, which is off by the
+    /// rounding in `requests` for sub-1-request-per-second bursts.
+    pub duration: Duration,
     /// How many times `acquire` returned `None` — the real pool's exhaustion
     /// count, not the fluid model's. Reported so the stall claim is made
     /// against a pool that genuinely ran dry.
@@ -5514,6 +5527,8 @@ pub fn simulate_burst(cfg: &BurstConfig) -> Result<BurstReport, PoolError> {
         distinct_blinding_factors: fingerprints.len(),
         reuse_events: requests - fingerprints.len(),
         pool_exhaustions: pool.exhaustions(),
+        online_cost: cfg.online_cost,
+        duration: cfg.duration,
         overload_factor: cfg.burst_rate_hz / refill_rate,
         growth_per_request: if cfg.online_cost.is_zero() {
             f64::INFINITY
@@ -5662,8 +5677,8 @@ impl BurstReport {
             ms(self.stall_max),
         ));
         out.push_str(&format!(
-            "\n  distinct blinding factors issued   {}\n  blinding-factor reuse events       {}\n",
-            self.distinct_blinding_factors, self.reuse_events
+            "\n  distinct blinding factors issued   {}\n  blinding-factor reuse events       {}\n               real pool exhaustions              {}\n",
+            self.distinct_blinding_factors, self.reuse_events, self.pool_exhaustions
         ));
         out.push_str(
             "\nOn exhaustion there are two available behaviours. This tool stalls. It does not\n\
