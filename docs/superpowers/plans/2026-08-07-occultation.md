@@ -1017,12 +1017,12 @@ EOF
 ### Task 3: The modelled boundary
 
 **Files:**
-- Create: `src/modelled.rs`, `src/ecdaa.rs`, `src/escrow.rs`
+- Create: `src/modelled.rs`, `src/ecdaa.rs`, `src/escrow.rs`, `tests/modelled_warns.rs`
 - Modify: `src/lib.rs`
 
 **Interfaces:**
 - Consumes: `Measurement`, `Source` from Task 1.
-- Produces: `modelled::{Provenance, AttestationVerdict, ModelledPermit, ModelledError, MODELLED_WARNING, AnonymousAttestation, EscrowTag, Attestation, Tag}`. `ecdaa::ModelledEcdaa::new(ModelledPermit) -> Self`. `escrow::ModelledThresholdElGamal::new(ModelledPermit, k: usize, n: usize) -> Result<Self, ModelledError>`.
+- Produces: `modelled::{Provenance, AttestationVerdict, ModelledPermit, ModelledError, MODELLED_WARNING, AnonymousAttestation, EscrowTag, Attestation, Tag, Opening}`. `ecdaa::ModelledEcdaa::new(ModelledPermit) -> Self`. `escrow::ModelledThresholdElGamal::new(ModelledPermit, k: usize, n: usize) -> Result<Self, ModelledError>`.
 
 This is the task the whole repository's credibility rests on. A stub that could be mistaken for a working ECDAA or a working escrow is worse than no stub at all. Four independent barriers, each asserted by test:
 
@@ -1075,6 +1075,18 @@ mod tests {
     }
 
     #[test]
+    fn independently_built_identical_provenances_compare_equal() {
+        // The report layer groups and deduplicates on this value, so
+        // semantically identical inputs must compare equal.
+        let a = Provenance::Modelled { component: "ECDAA", reason: "stub" };
+        let b = Provenance::Modelled { component: "ECDAA", reason: "stub" };
+        assert_eq!(a, b);
+        assert_ne!(a, Provenance::Modelled { component: "escrow", reason: "stub" });
+        assert_ne!(a, Provenance::Modelled { component: "ECDAA", reason: "other" });
+        assert_ne!(a, Provenance::Real { component: "ECDAA" });
+    }
+
+    #[test]
     fn a_modelled_verdict_is_not_equal_to_a_valid_one() {
         assert_ne!(AttestationVerdict::ModelledNoSecurity, AttestationVerdict::Valid);
         assert!(!AttestationVerdict::ModelledNoSecurity.is_valid());
@@ -1123,7 +1135,7 @@ mod tests {
     #[test]
     fn the_attestation_it_produces_is_labelled_modelled() {
         let a = stub().attest(b"m").unwrap();
-        assert!(matches!(a.provenance, Provenance::Modelled { .. }));
+        assert!(matches!(a.provenance(), Provenance::Modelled { .. }));
     }
 
     /// The cost profile has to be representative or the composed bench is
@@ -1175,9 +1187,12 @@ mod tests {
     #[test]
     fn the_tag_hides_nothing_and_the_test_says_so() {
         let s = stub(3, 5).unwrap();
-        let tag = s.tag(b"did:web:agent-42").unwrap();
+        let identity: &[u8] = b"did:web:agent-42";
+        let tag = s.tag(identity).unwrap();
+        // The window width comes off the identity, so changing the literal
+        // cannot silently turn this into a scan of the wrong width.
         assert!(
-            tag.bytes.windows(16).any(|w| w == &b"did:web:agent-42"[..]),
+            tag.bytes.windows(identity.len()).any(|w| w == identity),
             "the modelled tag carries the identity in the clear, on purpose"
         );
     }
@@ -1191,13 +1206,19 @@ mod tests {
         // a modelled opening as an accountable one.
         assert!(s.open(&tag, 2).is_err(), "2 shares is below 3-of-5");
         let opened = s.open(&tag, 3).unwrap();
-        assert!(opened.contains("MODELLED"), "got {opened}");
+        assert!(!opened.recovered_identity(), "a modelled opening recovers nothing");
+        assert!(matches!(opened.provenance(), Provenance::Modelled { .. }));
+        assert!(opened.description.contains("MODELLED"), "got {}", opened.description);
+        assert!(
+            !opened.description.contains("did:web:agent-42"),
+            "the opening must not echo the identity the tag carries in the clear"
+        );
     }
 
     #[test]
     fn the_tag_is_labelled_modelled() {
         let tag = stub(3, 5).unwrap().tag(b"x").unwrap();
-        assert!(matches!(tag.provenance, Provenance::Modelled { .. }));
+        assert!(matches!(tag.provenance(), Provenance::Modelled { .. }));
     }
 }
 ```
@@ -1214,8 +1235,8 @@ Prepend to `src/modelled.rs`:
 ```rust
 use serde::Serialize;
 
-/// Printed by the binary before any modelled code runs, and logged by every
-/// modelled invocation.
+/// Logged by every modelled invocation, and printed by the binary before any
+/// modelled code runs once the CLI is wired (Task 7).
 pub const MODELLED_WARNING: &str = "\
 WARNING: MODELLED COMPONENT IN USE. ECDAA and threshold ElGamal escrow are
 stubs providing no security: no anonymity, no soundness, no confidentiality
@@ -1297,17 +1318,74 @@ impl AttestationVerdict {
 }
 
 /// An anonymous platform attestation.
+///
+/// `provenance` is private with a `pub(crate)` constructor so that downstream
+/// code cannot build an `Attestation` that claims to be `Real` from a value a
+/// stub produced. Barrier 4 is then structural rather than conventional.
+/// `bytes` stays public: a test needs to tamper with it.
 #[derive(Clone, Debug)]
 pub struct Attestation {
     pub bytes: Vec<u8>,
-    pub provenance: Provenance,
+    provenance: Provenance,
+}
+
+impl Attestation {
+    pub(crate) fn new(bytes: Vec<u8>, provenance: Provenance) -> Self {
+        Attestation { bytes, provenance }
+    }
+
+    pub fn provenance(&self) -> &Provenance {
+        &self.provenance
+    }
 }
 
 /// An escrow tag binding an action to a recoverable identity.
 #[derive(Clone, Debug)]
 pub struct Tag {
     pub bytes: Vec<u8>,
-    pub provenance: Provenance,
+    provenance: Provenance,
+}
+
+impl Tag {
+    pub(crate) fn new(bytes: Vec<u8>, provenance: Provenance) -> Self {
+        Tag { bytes, provenance }
+    }
+
+    pub fn provenance(&self) -> &Provenance {
+        &self.provenance
+    }
+}
+
+/// The result of an escrow opening.
+///
+/// A distinct type rather than a `String`, for the same reason
+/// `AttestationVerdict` has a `ModelledNoSecurity` variant: generic code
+/// written against `EscrowTag` — which is exactly the shape a future real
+/// implementation invites — would otherwise bind `Ok(s)` as "the recovered
+/// identity", and the only thing stopping it would be the *content* of the
+/// string, which no type checks and no caller is obliged to read.
+#[derive(Clone, Debug)]
+pub struct Opening {
+    /// What the opening produced. For a modelled implementation this is a
+    /// statement that nothing was recovered, never an identity.
+    pub description: String,
+    provenance: Provenance,
+}
+
+impl Opening {
+    pub(crate) fn new(description: String, provenance: Provenance) -> Self {
+        Opening { description, provenance }
+    }
+
+    pub fn provenance(&self) -> &Provenance {
+        &self.provenance
+    }
+
+    /// Whether this opening recovered an identity. Always false for a
+    /// modelled implementation, and the only honest way to ask.
+    pub fn recovered_identity(&self) -> bool {
+        matches!(self.provenance, Provenance::Real { .. })
+    }
 }
 
 /// Prove membership in a valid TEE group without emitting a platform
@@ -1333,8 +1411,12 @@ pub trait EscrowTag {
 
     fn provenance(&self) -> Provenance;
     fn tag(&self, identity: &[u8]) -> Result<Tag, ModelledError>;
-    /// Recover the identity given `shares` cooperating nodes.
-    fn open(&self, tag: &Tag, shares: usize) -> Result<String, ModelledError>;
+    /// Attempt to recover the identity given `shares` cooperating nodes.
+    ///
+    /// Returns an `Opening`, not a `String`: a caller must ask
+    /// `Opening::recovered_identity()` rather than assume `Ok` means an
+    /// identity came back.
+    fn open(&self, tag: &Tag, shares: usize) -> Result<Opening, ModelledError>;
 }
 ```
 
@@ -1364,8 +1446,8 @@ const WHY: &str = "ECDAA is not implemented; this is a cost stand-in";
 /// a platform identifier, and its `verify` accepts nothing — it cannot return
 /// `Valid`.
 ///
-/// Constructing one requires a `ModelledPermit`, which only `--allow-modelled`
-/// produces.
+/// Constructing one requires a `ModelledPermit`. Once the CLI is wired
+/// (Task 7), `--allow-modelled` is the only thing that produces one.
 pub struct ModelledEcdaa {
     _permit: ModelledPermit,
 }
@@ -1396,7 +1478,7 @@ impl AnonymousAttestation for ModelledEcdaa {
         }
         let mut bytes = acc.to_compressed().to_vec();
         bytes.extend_from_slice(&Sha256::digest(measurement));
-        Ok(Attestation { bytes, provenance: self.provenance() })
+        Ok(Attestation::new(bytes, self.provenance()))
     }
 
     fn verify(&self, _measurement: &[u8], _attestation: &Attestation) -> AttestationVerdict {
@@ -1415,7 +1497,7 @@ Prepend to `src/escrow.rs`:
 
 ```rust
 use crate::modelled::{
-    EscrowTag, ModelledError, ModelledPermit, Provenance, Tag, MODELLED_WARNING,
+    EscrowTag, ModelledError, ModelledPermit, Opening, Provenance, Tag, MODELLED_WARNING,
 };
 use blstrs::{G1Projective, Scalar};
 use ff::Field;
@@ -1468,6 +1550,9 @@ impl EscrowTag for ModelledThresholdElGamal {
         log::warn!("{MODELLED_WARNING}");
         // Representative work: a real tag is two G1 elements plus a DLEQ proof,
         // which is four scalar multiplications and change.
+        // A fixed seed, not derived from the identity: the group work here is
+        // a cost stand-in and is identical for every input, which is one more
+        // reason nothing about this tag is secret.
         let mut rng = ChaCha20Rng::seed_from_u64(0xE5C0);
         let mut acc = G1Projective::identity();
         for _ in 0..4 {
@@ -1476,10 +1561,10 @@ impl EscrowTag for ModelledThresholdElGamal {
         let mut bytes = b"MODELLED-ESCROW-TAG:".to_vec();
         bytes.extend_from_slice(identity); // in the clear, on purpose
         bytes.extend_from_slice(&acc.to_compressed());
-        Ok(Tag { bytes, provenance: self.provenance() })
+        Ok(Tag::new(bytes, self.provenance()))
     }
 
-    fn open(&self, tag: &Tag, shares: usize) -> Result<String, ModelledError> {
+    fn open(&self, tag: &Tag, shares: usize) -> Result<Opening, ModelledError> {
         log::warn!("{MODELLED_WARNING}");
         if shares < self.k {
             return Err(ModelledError::BadThreshold {
@@ -1488,18 +1573,124 @@ impl EscrowTag for ModelledThresholdElGamal {
                 reason: "fewer cooperating shares than the threshold",
             });
         }
+        // `tag` is deliberately not read. The modelled tag carries the
+        // identity in plaintext, and touching it here would create the one
+        // path by which a modelled opening could return a real identity.
         let _ = tag;
-        // Not the identity. A caller that treats this as an accountable
-        // opening gets a string that says it is not one.
-        Ok(format!(
-            "MODELLED opening ({}-of-{}): no identity was recovered, because nothing was escrowed",
-            self.k, self.n
+        Ok(Opening::new(
+            format!(
+                "MODELLED opening ({}-of-{}): no identity was recovered, because nothing \
+                 was escrowed",
+                self.k, self.n
+            ),
+            self.provenance(),
         ))
     }
 }
 ```
 
-- [ ] **Step 6: Wire the modules and run**
+- [ ] **Step 6: Test barrier 3 — the warning actually fires, on every path**
+
+Three of the four barriers are defended by the unit tests above. Barrier 3 is
+not: deleting any single `log::warn!` would break nothing. A barrier no test
+defends is a comment.
+
+It needs its own process, because `log::set_boxed_logger` succeeds once per
+process and unit tests share one. Create `tests/modelled_warns.rs`:
+
+```rust
+//! Barrier 3: every modelled invocation warns.
+//!
+//! Its own integration test binary, because a logger can only be installed
+//! once per process and the unit tests share one.
+
+use log::{Level, Log, Metadata, Record};
+use occultation::ecdaa::ModelledEcdaa;
+use occultation::escrow::ModelledThresholdElGamal;
+use occultation::modelled::{
+    AnonymousAttestation, EscrowTag, ModelledPermit, MODELLED_WARNING,
+};
+use std::sync::Mutex;
+
+static CAPTURED: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+struct Capture;
+
+impl Log for Capture {
+    fn enabled(&self, _: &Metadata) -> bool {
+        true
+    }
+    fn log(&self, record: &Record) {
+        if record.level() <= Level::Warn {
+            CAPTURED.lock().expect("not poisoned").push(record.args().to_string());
+        }
+    }
+    fn flush(&self) {}
+}
+
+fn drain() -> Vec<String> {
+    std::mem::take(&mut *CAPTURED.lock().expect("not poisoned"))
+}
+
+/// One test, not four: the logger installs once, and splitting these would
+/// race on the shared buffer.
+#[test]
+fn every_modelled_invocation_warns() {
+    log::set_boxed_logger(Box::new(Capture)).expect("first and only install");
+    log::set_max_level(log::LevelFilter::Trace);
+
+    let permit = ModelledPermit::from_flag(true).expect("flag is set");
+    let ecdaa = ModelledEcdaa::new(permit);
+    let escrow = ModelledThresholdElGamal::new(permit, 3, 5).expect("3-of-5 is openable");
+
+    let checks: Vec<(&str, Box<dyn Fn()>)> = vec![
+        ("ModelledEcdaa::attest", Box::new(|| {
+            ecdaa.attest(b"measurement").expect("stub cannot fail");
+        })),
+        ("ModelledEcdaa::verify", Box::new(|| {
+            let a = ecdaa.attest(b"measurement").expect("stub cannot fail");
+            drain(); // discard the attest warning; we are testing verify
+            ecdaa.verify(b"measurement", &a);
+        })),
+        ("ModelledThresholdElGamal::tag", Box::new(|| {
+            escrow.tag(b"did:web:agent-42").expect("stub cannot fail");
+        })),
+        ("ModelledThresholdElGamal::open", Box::new(|| {
+            let tag = escrow.tag(b"did:web:agent-42").expect("stub cannot fail");
+            drain(); // discard the tag warning
+            escrow.open(&tag, 3).expect("3 shares meets a 3-of-5 threshold");
+        })),
+    ];
+
+    for (path, run) in checks {
+        drain();
+        run();
+        let warnings = drain();
+        assert!(!warnings.is_empty(), "{path} ran without warning");
+        assert!(
+            warnings.iter().all(|w| w.contains("MODELLED") && w.contains("no security")),
+            "{path} warned, but not with the modelled warning: {warnings:?}"
+        );
+    }
+
+    // And a refused opening must warn too — the caller still touched a stub.
+    drain();
+    let tag = escrow.tag(b"x").expect("stub cannot fail");
+    drain();
+    assert!(escrow.open(&tag, 1).is_err(), "1 share is below a 3-of-5 threshold");
+    assert!(!drain().is_empty(), "a refused opening ran without warning");
+
+    // The constant itself must carry both markers, or every check above is
+    // asserting against a string that says nothing.
+    assert!(MODELLED_WARNING.contains("MODELLED"));
+    assert!(MODELLED_WARNING.contains("no security"));
+}
+```
+
+Run: `cargo test --test modelled_warns`
+Expected: PASS, 1 test. Then delete one `log::warn!` line, re-run, and confirm it **fails** — a barrier you have not seen fail is not a barrier you have tested. Restore the line.
+
+- [ ] **Step 7: Wire the modules and run**
 
 Update `src/lib.rs`:
 
@@ -1513,9 +1704,9 @@ pub mod modelled;
 ```
 
 Run: `cargo test --lib modelled && cargo test --lib ecdaa && cargo test --lib escrow`
-Expected: PASS, 15 tests.
+Expected: PASS, 16 tests.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add -A
@@ -1523,11 +1714,19 @@ git commit -m "$(cat <<'EOF'
 Add the modelled boundary for ECDAA and threshold escrow
 
 Four independent barriers against a stub being mistaken for the real
-thing: a permit is required to construct one, AttestationVerdict::Valid is
-unreachable from a modelled implementation, every invocation logs a
-warning, and every value carries its provenance. The escrow tag carries
-the identity in plaintext on purpose — a stub that appeared to encrypt
-would invite someone to trust it.
+thing, each defended by a test: a permit is required to construct one,
+AttestationVerdict::Valid is unreachable from a modelled implementation,
+every invocation logs a warning, and every value carries its provenance.
+
+Provenance fields are private with pub(crate) constructors, so barrier 4
+is structural rather than conventional. `open` returns an `Opening` rather
+than a `String` for the same reason `AttestationVerdict` has a
+ModelledNoSecurity variant: generic code written against the trait would
+otherwise bind Ok(s) as the recovered identity, with only the content of
+the string to stop it.
+
+The escrow tag carries the identity in plaintext on purpose — a stub that
+appeared to encrypt would invite someone to trust it.
 
 Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
 EOF
@@ -3397,6 +3596,10 @@ enum Cmd {
 }
 
 fn main() -> ExitCode {
+    // `default_filter_or("warn")`, not `env_logger::init()`. The latter
+    // defaults to `error` when RUST_LOG is unset, which would silently
+    // discard every modelled-component warning — barrier 3 would hold in
+    // the library and vanish at the binary.
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
     match run() {
         Ok(code) => code,
