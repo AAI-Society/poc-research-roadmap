@@ -1036,7 +1036,7 @@ mod tests {
         let s = stub(3, 5).unwrap();
         let tag = s.tag(b"did:web:agent-42").unwrap();
         assert!(
-            tag.bytes.windows(16).any(|w| w == b"did:web:agent-42"),
+            tag.bytes.windows(16).any(|w| w == &b"did:web:agent-42"[..]),
             "the modelled tag carries the identity in the clear, on purpose"
         );
     }
@@ -1790,7 +1790,7 @@ Update `src/lib.rs` to add `pub mod bls;`.
 - [ ] **Step 5: Run the test to verify it passes**
 
 Run: `cargo test --lib bls`
-Expected: PASS, 9 tests. In particular `expand_message_xmd_matches_rfc9380_appendix_k1` must pass on all six vectors; if it does not, the bug is in the implementation, not the vectors.
+Expected: PASS, 10 tests. In particular `expand_message_xmd_matches_rfc9380_appendix_k1` must pass on all six vectors; if it does not, the bug is in the implementation, not the vectors.
 
 - [ ] **Step 6: Commit**
 
@@ -2139,8 +2139,9 @@ Create `src/bbs/mod.rs`:
 //! not claimed anywhere and must not be inferred.
 
 pub mod keys;
-pub mod proof;
 pub mod sign;
+// `pub mod proof;` is added in Task 6, when the file exists. Adding it now
+// breaks the build at the end of this task.
 
 pub use keys::{KeyPair, PublicKey, SecretKey};
 pub use sign::{calculate_domain, message_to_scalar, sign, verify, Signature};
@@ -2164,7 +2165,7 @@ pub enum BbsError {
 
 Update `src/lib.rs` to add `pub mod bbs;`.
 
-**Note for the implementer:** `src/bbs/proof.rs` does not exist until Task 6. Add `pub mod proof;` to `mod.rs` in Task 6, not now, or create the file empty in this task — either is fine, but `cargo test` must pass at the end of this task.
+**Note for the implementer:** `src/bbs/proof.rs` does not exist until Task 6, which is why `mod.rs` above does not declare it. `cargo test` must pass at the end of this task.
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
@@ -2194,7 +2195,7 @@ EOF
 
 **Files:**
 - Create: `src/bbs/proof.rs`
-- Modify: `src/bbs/mod.rs`, `src/lib.rs`
+- Modify: `src/bbs/mod.rs` (add `pub mod proof;` and re-export `Proof`, `ProofScalars`), `src/lib.rs`
 
 **Interfaces:**
 - Consumes: everything from Tasks 4–5.
@@ -2440,7 +2441,7 @@ use crate::bbs::keys::PublicKey;
 use crate::bbs::sign::{calculate_domain, Signature};
 use crate::bbs::BbsError;
 use crate::bls::{hash_to_scalar, octets, Generators, PreparedIssuer, API_ID};
-use blstrs::{Bls12, G1Projective, G2Prepared, Gt, Scalar};
+use blstrs::{Bls12, G1Projective, Gt, Scalar};
 use ff::Field;
 use group::{Curve, Group};
 use pairing::{MillerLoopResult, MultiMillerLoop};
@@ -2700,10 +2701,6 @@ pub fn verify_proof_prepared(
     .final_exponentiation();
     Ok(result == Gt::identity())
 }
-
-/// Kept so `G2Prepared` is nameable from this module's tests without an extra
-/// import in every one.
-pub type Prepared = G2Prepared;
 ```
 
 Note: `verify_proof` constructing a `PreparedIssuer` on every call means the plain path pays the `G2Prepared::from` cost twice per verification, which is exactly the uncached path we want to measure in Task 7. That is intentional, not an oversight.
@@ -3007,7 +3004,7 @@ Create `src/bench.rs`:
 ```rust
 use crate::baseline::{measure_baseline, Baseline};
 use crate::bbs::keys::KeyPair;
-use crate::bbs::proof::{prove, verify_proof, verify_proof_prepared, ProofScalars};
+use crate::bbs::proof::{prove, verify_proof, verify_proof_prepared};
 use crate::bbs::sign::{message_to_scalar, sign, verify};
 use crate::bbs::BbsError;
 use crate::bls::{hash_to_scalar, Generators, PreparedIssuer, API_ID};
@@ -3205,10 +3202,6 @@ impl PrimitiveCosts {
         (self.present.median, self.verify_proof_uncached.median, self.verify_proof_cached.median)
     }
 }
-
-/// Kept so the bench module compiles when `ProofScalars` is unused above; the
-/// pool in Task 9 imports it from here.
-pub use crate::bbs::proof::ProofScalars as BenchProofScalars;
 ```
 
 - [ ] **Step 5: Wire the CLI**
@@ -3424,13 +3417,21 @@ mod composed_tests {
     #[test]
     fn the_measured_composed_cost_is_a_large_multiple_of_the_baseline() {
         // Host-independent form of "unlinkability is expensive". The desk
-        // study says ~70x unoptimized; anything above 10x reproduces the
+        // study says ~70x unoptimized; a large multiple reproduces the
         // qualitative claim without pinning a wall clock.
+        //
+        // The floor is lower under `cargo test`, which builds unoptimized:
+        // ed25519-dalek is pure Rust and loses roughly an order of magnitude,
+        // while blstrs' work happens in blst's C, which is compiled optimized
+        // either way. The debug ratio is therefore compressed and says nothing
+        // about the release one. Run `cargo test --release` for the real
+        // figure.
+        let floor = if cfg!(debug_assertions) { 2.0 } else { 10.0 };
         let c = costs();
         let r = composed_report(&c);
         let ratio = r.measured[0].composed.total.as_secs_f64()
             / c.baseline.round_trip().as_secs_f64();
-        assert!(ratio > 10.0, "composed BBS+ was only {ratio:.1}x Ed25519");
+        assert!(ratio > floor, "composed BBS+ was only {ratio:.1}x Ed25519 (floor {floor})");
     }
 }
 ```
@@ -4016,7 +4017,6 @@ Prepend to `src/pool.rs`:
 
 ```rust
 use crate::bbs::proof::ProofScalars;
-use blstrs::Scalar;
 use rand_chacha::ChaCha20Rng;
 use rand_core::SeedableRng;
 use serde::Serialize;
@@ -4230,7 +4230,12 @@ pub fn simulate_burst(cfg: &BurstConfig) -> Result<BurstReport, PoolError> {
     let interval = 1.0 / cfg.burst_rate_hz;
     let capacity = cfg.capacity as f64;
 
-    // Items available, as a real number. Starts full.
+    // Items available, as a real number. Starts full. It goes *negative*
+    // once arrivals outrun refill, which is deliberate: the negative part is
+    // the backlog, and it is what makes each successive stall longer than the
+    // last. An unthrottled burst above the refill rate does not settle at a
+    // constant penalty — the delay grows without bound for as long as the
+    // burst lasts, which is the shape of the side channel.
     let mut level = capacity;
     let mut last_t = 0.0f64;
 
@@ -4366,7 +4371,10 @@ Append to `src/pool.rs`'s test module:
         assert!(out.contains("EXHAUSTED"), "{out}");
         assert!(out.contains("stall"), "{out}");
         assert!(out.contains("reuse"), "the report must address reuse explicitly: {out}");
-        assert!(out.contains("0"), "reuse events must be reported as a number: {out}");
+        assert!(
+            out.contains("blinding-factor reuse events       0"),
+            "the reuse count must be printed, and it must be zero: {out}"
+        );
     }
 
     #[test]
@@ -4654,3 +4662,1323 @@ EOF
 ```
 
 ---
+
+### Task 11: The anonymity-set calculator and acceptance test 3
+
+**Files:**
+- Create: `src/anonymity.rs`, `examples/fleet-uniform.toml`, `examples/fleet-drifted.toml`
+- Modify: `src/lib.rs`, `src/bin/occultation.rs`, `tests/acceptance.rs`
+
+**Interfaces:**
+- Consumes: nothing from prior tasks.
+- Produces: `anonymity::{Fleet, Host, AnonymityError, Partition, AnonymityReport, partition}`. `Fleet::load(&Path) -> Result<Fleet, AnonymityError>`. `partition(&Fleet) -> Result<AnonymityReport, AnonymityError>`. CLI: `occultation anonymity --fleet <f.toml> [--min-set K] [--format table|json]`, exit 1 when the smallest partition is below `K`.
+
+P05's open question 7 asks what the anonymity set is actually made of, and open question 4 names the concrete hazard: TDX quote collateral is itself a fingerprint, so two agents on distinct TCB versions are distinguishable even under perfect ECDAA. This is the cheapest measurement in the paper and the one most likely to produce a negative result, which is why it is worth doing early.
+
+The tool partitions a fleet by its TCB configuration and reports the partition sizes. It also names **which attributes actually vary**, because "your anonymity set is 3" is less useful to an operator than "your anonymity set is 3 because those three hosts have a microcode revision nobody else has".
+
+- [ ] **Step 1: Write the failing test**
+
+Create `src/anonymity.rs`:
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const UNIFORM: &str = r#"
+name = "uniform"
+
+[[host]]
+id = "pool-a"
+count = 12
+[host.tcb]
+tdx_module = "1.5.05"
+cpu_svn = "0x0e"
+pce_svn = "13"
+"#;
+
+    const DRIFTED: &str = r#"
+name = "drifted"
+
+[[host]]
+id = "pool-a"
+count = 8
+[host.tcb]
+tdx_module = "1.5.05"
+cpu_svn = "0x0e"
+pce_svn = "13"
+
+[[host]]
+id = "pool-b"
+count = 3
+[host.tcb]
+tdx_module = "1.5.05"
+cpu_svn = "0x0e"
+pce_svn = "12"
+
+[[host]]
+id = "straggler"
+[host.tcb]
+tdx_module = "1.5.03"
+cpu_svn = "0x0d"
+pce_svn = "12"
+"#;
+
+    #[test]
+    fn a_single_tcb_fleet_is_one_partition_the_size_of_the_fleet() {
+        let f: Fleet = toml::from_str(UNIFORM).unwrap();
+        let r = partition(&f).unwrap();
+        assert_eq!(r.fleet_size, 12);
+        assert_eq!(r.partitions.len(), 1);
+        assert_eq!(r.partitions[0].size, 12);
+        assert_eq!(r.min_set, 12);
+        assert_eq!(r.singletons, 0);
+        assert!(r.distinguishing_attributes.is_empty(), "nothing varies");
+    }
+
+    #[test]
+    fn a_drifted_fleet_reports_its_partition_sizes() {
+        let f: Fleet = toml::from_str(DRIFTED).unwrap();
+        let r = partition(&f).unwrap();
+        assert_eq!(r.fleet_size, 12);
+        let sizes: Vec<usize> = r.partitions.iter().map(|p| p.size).collect();
+        assert_eq!(sizes, vec![8, 3, 1], "partitions are ordered largest first");
+        assert_eq!(r.min_set, 1);
+        assert_eq!(r.max_set, 8);
+        assert_eq!(r.singletons, 1, "one host is alone on its TCB configuration");
+    }
+
+    #[test]
+    fn it_names_the_attributes_that_actually_split_the_fleet() {
+        let f: Fleet = toml::from_str(DRIFTED).unwrap();
+        let r = partition(&f).unwrap();
+        let mut got = r.distinguishing_attributes.clone();
+        got.sort();
+        assert_eq!(got, vec!["cpu_svn", "pce_svn", "tdx_module"]);
+    }
+
+    #[test]
+    fn an_attribute_that_is_constant_is_not_reported_as_distinguishing() {
+        let src = r#"
+name = "one-field-varies"
+[[host]]
+id = "a"
+count = 5
+[host.tcb]
+tdx_module = "1.5.05"
+pce_svn = "13"
+[[host]]
+id = "b"
+count = 5
+[host.tcb]
+tdx_module = "1.5.05"
+pce_svn = "12"
+"#;
+        let f: Fleet = toml::from_str(src).unwrap();
+        let r = partition(&f).unwrap();
+        assert_eq!(r.distinguishing_attributes, vec!["pce_svn".to_string()]);
+    }
+
+    #[test]
+    fn effective_set_size_is_the_size_weighted_mean_not_the_arithmetic_one() {
+        // 8/3/1: the arithmetic mean of the partition sizes is 4, but a
+        // randomly chosen host sits in a set of expected size
+        // (8*8 + 3*3 + 1*1)/12 = 6.17. Reporting 4 would understate it and
+        // reporting 12 would overstate it wildly.
+        let f: Fleet = toml::from_str(DRIFTED).unwrap();
+        let r = partition(&f).unwrap();
+        assert!((r.effective_set - 74.0 / 12.0).abs() < 1e-9, "got {}", r.effective_set);
+    }
+
+    #[test]
+    fn entropy_is_zero_for_a_uniform_fleet_and_positive_otherwise() {
+        let uniform: Fleet = toml::from_str(UNIFORM).unwrap();
+        assert!(partition(&uniform).unwrap().entropy_bits.abs() < 1e-12);
+        let drifted: Fleet = toml::from_str(DRIFTED).unwrap();
+        assert!(partition(&drifted).unwrap().entropy_bits > 0.0);
+    }
+
+    #[test]
+    fn hosts_differing_only_in_key_order_land_in_one_partition() {
+        // TOML table order must not manufacture a partition. If it did, the
+        // tool would report fake fragmentation and the paper's headline
+        // number would be an artifact of file formatting.
+        let src = r#"
+name = "order"
+[[host]]
+id = "a"
+[host.tcb]
+alpha = "1"
+beta = "2"
+[[host]]
+id = "b"
+[host.tcb]
+beta = "2"
+alpha = "1"
+"#;
+        let f: Fleet = toml::from_str(src).unwrap();
+        assert_eq!(partition(&f).unwrap().partitions.len(), 1);
+    }
+
+    #[test]
+    fn a_host_missing_an_attribute_others_declare_is_its_own_partition() {
+        // Absent is not the same as equal. A host whose quote omits a field
+        // is distinguishable from one that reports it.
+        let src = r#"
+name = "missing"
+[[host]]
+id = "a"
+[host.tcb]
+tdx_module = "1.5.05"
+pce_svn = "13"
+[[host]]
+id = "b"
+[host.tcb]
+tdx_module = "1.5.05"
+"#;
+        let f: Fleet = toml::from_str(src).unwrap();
+        assert_eq!(partition(&f).unwrap().partitions.len(), 2);
+    }
+
+    #[test]
+    fn an_empty_fleet_is_an_error_not_a_division_by_zero() {
+        let f: Fleet = toml::from_str("name = \"empty\"\n").unwrap();
+        assert!(partition(&f).is_err());
+    }
+
+    #[test]
+    fn a_zero_count_host_is_rejected() {
+        let src = "name = \"z\"\n[[host]]\nid = \"a\"\ncount = 0\n[host.tcb]\nx = \"1\"\n";
+        let f: Fleet = toml::from_str(src).unwrap();
+        assert!(partition(&f).is_err());
+    }
+
+    #[test]
+    fn a_host_with_no_tcb_attributes_is_rejected() {
+        // An empty TCB describes nothing and would silently merge every such
+        // host into one enormous, wrong anonymity set.
+        let src = "name = \"z\"\n[[host]]\nid = \"a\"\n[host.tcb]\n";
+        let f: Fleet = toml::from_str(src).unwrap();
+        assert!(partition(&f).is_err());
+    }
+
+    #[test]
+    fn an_unknown_top_level_key_is_rejected_rather_than_ignored() {
+        let src = "name = \"z\"\nhosts = 5\n[[host]]\nid = \"a\"\n[host.tcb]\nx = \"1\"\n";
+        assert!(toml::from_str::<Fleet>(src).is_err(), "`hosts` is a typo for `host`");
+    }
+
+    #[test]
+    fn both_shipped_examples_load_and_partition() {
+        for name in ["fleet-uniform", "fleet-drifted"] {
+            let p = format!("examples/{name}.toml");
+            let f = Fleet::load(std::path::Path::new(&p)).unwrap_or_else(|e| panic!("{p}: {e}"));
+            partition(&f).unwrap_or_else(|e| panic!("{p}: {e}"));
+        }
+    }
+}
+```
+
+- [ ] **Step 2: Run the test to verify it fails**
+
+Run: `cargo test --lib anonymity`
+Expected: FAIL — `cannot find type Fleet in this scope`.
+
+- [ ] **Step 3: Write the implementation**
+
+Prepend to `src/anonymity.rs`:
+
+```rust
+use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::Path;
+
+#[derive(Debug, thiserror::Error)]
+pub enum AnonymityError {
+    #[error("could not read {path}: {source}")]
+    Io {
+        path: String,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("could not parse {path}: {source}")]
+    Parse {
+        path: String,
+        #[source]
+        source: toml::de::Error,
+    },
+    #[error("the fleet declares no hosts")]
+    EmptyFleet,
+    #[error("host `{0}` declares count = 0")]
+    ZeroCount(String),
+    #[error("host `{0}` declares no TCB attributes; an empty TCB describes nothing")]
+    EmptyTcb(String),
+}
+
+/// A group of identically configured hosts.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Host {
+    pub id: String,
+    /// How many machines share this configuration. Lets a 5000-host fleet be
+    /// described in a handful of lines.
+    #[serde(default = "one")]
+    pub count: usize,
+    /// The TCB fingerprint: TDX module version, CPU SVN, PCE SVN, microcode
+    /// revision, QE identity, PCS chain — whatever the operator can observe.
+    /// Free-form on purpose; the tool partitions on whatever it is given.
+    pub tcb: BTreeMap<String, String>,
+}
+
+fn one() -> usize {
+    1
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Fleet {
+    pub name: String,
+    #[serde(default)]
+    pub host: Vec<Host>,
+}
+
+impl Fleet {
+    pub fn load(path: &Path) -> Result<Self, AnonymityError> {
+        let text = std::fs::read_to_string(path).map_err(|source| AnonymityError::Io {
+            path: path.display().to_string(),
+            source,
+        })?;
+        toml::from_str(&text).map_err(|source| AnonymityError::Parse {
+            path: path.display().to_string(),
+            source,
+        })
+    }
+
+    pub fn size(&self) -> usize {
+        self.host.iter().map(|h| h.count).sum()
+    }
+}
+
+/// One anonymity set: the hosts an observer cannot tell apart.
+#[derive(Clone, Debug, Serialize)]
+pub struct Partition {
+    pub tcb: BTreeMap<String, String>,
+    pub host_groups: Vec<String>,
+    pub size: usize,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct AnonymityReport {
+    pub fleet: String,
+    pub fleet_size: usize,
+    /// Largest first, then by fingerprint for stable output.
+    pub partitions: Vec<Partition>,
+    pub min_set: usize,
+    pub median_set: usize,
+    pub max_set: usize,
+    /// Hosts alone on their configuration. Their anonymity set is themselves.
+    pub singletons: usize,
+    /// Expected anonymity set size for a uniformly chosen host,
+    /// `sum(n_i^2) / N`. Larger partitions contain more hosts and so are
+    /// weighted more heavily, which the arithmetic mean of partition sizes
+    /// fails to do.
+    pub effective_set: f64,
+    /// Shannon entropy over the partition distribution, in bits. Zero when
+    /// every host looks alike.
+    pub entropy_bits: f64,
+    /// The TCB attributes that actually take more than one value. These are
+    /// the fields doing the deanonymizing.
+    pub distinguishing_attributes: Vec<String>,
+}
+
+/// Canonical, unambiguous rendering of a TCB map. `BTreeMap` sorts the keys,
+/// so TOML table order cannot manufacture a partition, and the separators are
+/// length-prefixed so `{a: "b=c"}` cannot collide with `{a: "b", c: ""}`.
+fn fingerprint(tcb: &BTreeMap<String, String>) -> String {
+    tcb.iter()
+        .map(|(k, v)| format!("{}:{k}={}:{v}", k.len(), v.len()))
+        .collect::<Vec<_>>()
+        .join("|")
+}
+
+pub fn partition(fleet: &Fleet) -> Result<AnonymityReport, AnonymityError> {
+    if fleet.host.is_empty() {
+        return Err(AnonymityError::EmptyFleet);
+    }
+    for h in &fleet.host {
+        if h.count == 0 {
+            return Err(AnonymityError::ZeroCount(h.id.clone()));
+        }
+        if h.tcb.is_empty() {
+            return Err(AnonymityError::EmptyTcb(h.id.clone()));
+        }
+    }
+
+    let mut by_fp: BTreeMap<String, Partition> = BTreeMap::new();
+    for h in &fleet.host {
+        let e = by_fp.entry(fingerprint(&h.tcb)).or_insert_with(|| Partition {
+            tcb: h.tcb.clone(),
+            host_groups: Vec::new(),
+            size: 0,
+        });
+        e.host_groups.push(h.id.clone());
+        e.size += h.count;
+    }
+
+    let mut partitions: Vec<Partition> = by_fp.into_values().collect();
+    // Largest first; ties broken by fingerprint, which BTreeMap already
+    // ordered, so `sort_by` must be stable — it is.
+    partitions.sort_by(|a, b| b.size.cmp(&a.size));
+
+    let fleet_size = fleet.size();
+    let sizes: Vec<usize> = partitions.iter().map(|p| p.size).collect();
+    let n = fleet_size as f64;
+
+    let mut sorted = sizes.clone();
+    sorted.sort_unstable();
+
+    // Which attributes take more than one value across the fleet? A key that
+    // is absent from some hosts counts as varying, because absence is
+    // observable.
+    let all_keys: BTreeSet<&String> = fleet.host.iter().flat_map(|h| h.tcb.keys()).collect();
+    let distinguishing_attributes = all_keys
+        .into_iter()
+        .filter(|k| {
+            let values: BTreeSet<Option<&String>> =
+                fleet.host.iter().map(|h| h.tcb.get(*k)).collect();
+            values.len() > 1
+        })
+        .cloned()
+        .collect();
+
+    Ok(AnonymityReport {
+        fleet: fleet.name.clone(),
+        fleet_size,
+        min_set: *sorted.first().expect("non-empty"),
+        median_set: sorted[sorted.len() / 2],
+        max_set: *sorted.last().expect("non-empty"),
+        singletons: sizes.iter().filter(|&&s| s == 1).count(),
+        effective_set: sizes.iter().map(|&s| (s * s) as f64).sum::<f64>() / n,
+        entropy_bits: -sizes
+            .iter()
+            .map(|&s| {
+                let p = s as f64 / n;
+                p * p.log2()
+            })
+            .sum::<f64>(),
+        distinguishing_attributes,
+        partitions,
+    })
+}
+
+impl AnonymityReport {
+    pub fn render(&self) -> String {
+        let mut out = format!(
+            "Anonymity sets for fleet `{}`\n\n  fleet size            {}\n  \
+             distinct TCB configs  {}\n",
+            self.fleet,
+            self.fleet_size,
+            self.partitions.len()
+        );
+        out.push_str(&format!(
+            "  smallest set          {}\n  median set            {}\n  largest set           {}\n  \
+             singletons            {}\n  effective set size    {:.2}\n  entropy               {:.3} bits\n\n",
+            self.min_set,
+            self.median_set,
+            self.max_set,
+            self.singletons,
+            self.effective_set,
+            self.entropy_bits
+        ));
+
+        out.push_str(&format!("  {:<8} {:<10} {}\n", "SIZE", "GROUPS", "TCB CONFIGURATION"));
+        for p in &self.partitions {
+            let tcb = p
+                .tcb
+                .iter()
+                .map(|(k, v)| format!("{k}={v}"))
+                .collect::<Vec<_>>()
+                .join(" ");
+            out.push_str(&format!(
+                "  {:<8} {:<10} {}\n",
+                p.size,
+                p.host_groups.join(","),
+                tcb
+            ));
+        }
+
+        if self.distinguishing_attributes.is_empty() {
+            out.push_str(
+                "\nNo TCB attribute varies across this fleet, so quote collateral does not \
+                 partition it.\n",
+            );
+        } else {
+            out.push_str(&format!(
+                "\nThe attributes doing the deanonymizing: {}.\n",
+                self.distinguishing_attributes.join(", ")
+            ));
+        }
+        if self.singletons > 0 {
+            out.push_str(&format!(
+                "\n{} host(s) are alone on their TCB configuration. Their anonymity set is \
+                 themselves,\nand no credential scheme can help them: the quote collateral \
+                 identifies the machine\nbefore the credential is even presented.\n",
+                self.singletons
+            ));
+        }
+        out
+    }
+
+    pub fn to_json(&self) -> serde_json::Value {
+        serde_json::to_value(self).expect("AnonymityReport is serializable")
+    }
+}
+```
+
+- [ ] **Step 4: Write the example fleets**
+
+Create `examples/fleet-uniform.toml`:
+
+```toml
+# A fleet whose hosts are indistinguishable by quote collateral: one TDX
+# module version, one CPU SVN, one PCE SVN, one microcode revision. This is
+# what the construction assumes, and it is what a fleet looks like only
+# immediately after a synchronized rollout.
+name = "acme-prod-uniform"
+
+[[host]]
+id = "us-east-pool"
+count = 120
+
+[host.tcb]
+tdx_module = "1.5.05"
+cpu_svn = "0x0e"
+pce_svn = "13"
+microcode = "0x2b000603"
+qe_identity = "v2.1"
+pcs_chain = "intel-pcs-2026h1"
+```
+
+Create `examples/fleet-drifted.toml`. Same 120 hosts, drifted the way a real fleet drifts: a patch wave that did not finish, a rack on older firmware, and one machine that was rebuilt last week.
+
+```toml
+# The same 120 hosts, six weeks later. Nothing here is unusual — this is what
+# a fleet looks like when a microcode rollout is 60% done and one rack missed
+# the last two maintenance windows.
+name = "acme-prod-drifted"
+
+[[host]]
+id = "us-east-pool-patched"
+count = 71
+
+[host.tcb]
+tdx_module = "1.5.05"
+cpu_svn = "0x0e"
+pce_svn = "13"
+microcode = "0x2b000603"
+qe_identity = "v2.1"
+pcs_chain = "intel-pcs-2026h1"
+
+[[host]]
+id = "us-east-pool-pending"
+count = 34
+
+[host.tcb]
+tdx_module = "1.5.05"
+cpu_svn = "0x0e"
+pce_svn = "12"
+microcode = "0x2b000603"
+qe_identity = "v2.1"
+pcs_chain = "intel-pcs-2026h1"
+
+[[host]]
+id = "eu-west-rack-7"
+count = 11
+
+[host.tcb]
+tdx_module = "1.5.03"
+cpu_svn = "0x0d"
+pce_svn = "12"
+microcode = "0x2b000401"
+qe_identity = "v2.0"
+pcs_chain = "intel-pcs-2025h2"
+
+[[host]]
+id = "us-east-canary"
+count = 3
+
+[host.tcb]
+tdx_module = "1.5.05"
+cpu_svn = "0x0e"
+pce_svn = "13"
+microcode = "0x2b000701"
+qe_identity = "v2.1"
+pcs_chain = "intel-pcs-2026h1"
+
+[[host]]
+id = "us-east-rebuilt-0419"
+count = 1
+
+[host.tcb]
+tdx_module = "1.5.06"
+cpu_svn = "0x0f"
+pce_svn = "14"
+microcode = "0x2b000701"
+qe_identity = "v2.2"
+pcs_chain = "intel-pcs-2026h1"
+```
+
+- [ ] **Step 5: Add the CLI subcommand**
+
+Add to `Cmd`:
+
+```rust
+    /// Anonymity set size given TCB configuration diversity
+    Anonymity {
+        #[arg(long)]
+        fleet: PathBuf,
+        /// Exit 1 if any anonymity set is smaller than this
+        #[arg(long)]
+        min_set: Option<usize>,
+        #[arg(long, default_value = "table")]
+        format: Format,
+    },
+```
+
+And to `run()`:
+
+```rust
+        Cmd::Anonymity { fleet, min_set, format } => {
+            let f = occultation::anonymity::Fleet::load(&fleet)?;
+            let report = occultation::anonymity::partition(&f)?;
+            match format {
+                Format::Table => println!("{}", report.render()),
+                Format::Json => println!("{}", serde_json::to_string_pretty(&report.to_json())?),
+            }
+            if let Some(k) = min_set {
+                if report.min_set < k {
+                    eprintln!(
+                        "VIOLATION: smallest anonymity set is {}, policy requires {k}",
+                        report.min_set
+                    );
+                    return Ok(ExitCode::from(1));
+                }
+            }
+            Ok(ExitCode::SUCCESS)
+        }
+```
+
+Add `use std::path::PathBuf;` to the binary.
+
+- [ ] **Step 6: Write acceptance test 3**
+
+Append to `tests/acceptance.rs`:
+
+```rust
+use occultation::anonymity::{partition, Fleet};
+use std::path::Path;
+
+/// Acceptance test 3 — a single-TCB fleet is one anonymity set the size of the
+/// fleet; a drifted fleet reports its partition sizes.
+#[test]
+fn a_single_tcb_fleet_has_an_anonymity_set_equal_to_the_fleet() {
+    let f = Fleet::load(Path::new("examples/fleet-uniform.toml")).unwrap();
+    let r = partition(&f).unwrap();
+    assert_eq!(r.fleet_size, 120);
+    assert_eq!(r.partitions.len(), 1);
+    assert_eq!(r.partitions[0].size, r.fleet_size);
+    assert_eq!(r.min_set, 120);
+    assert_eq!(r.singletons, 0);
+    assert!((r.effective_set - 120.0).abs() < 1e-9);
+    assert!(r.entropy_bits.abs() < 1e-12, "a uniform fleet leaks no bits");
+}
+
+#[test]
+fn a_fleet_with_tcb_drift_reports_its_partition_sizes() {
+    let f = Fleet::load(Path::new("examples/fleet-drifted.toml")).unwrap();
+    let r = partition(&f).unwrap();
+
+    assert_eq!(r.fleet_size, 120, "the same 120 hosts as the uniform fleet");
+    let sizes: Vec<usize> = r.partitions.iter().map(|p| p.size).collect();
+    assert_eq!(sizes, vec![71, 34, 11, 3, 1]);
+
+    // The finding: identical hardware, six weeks of ordinary drift, and the
+    // largest anonymity set is now 71 rather than 120 — with one host alone.
+    assert_eq!(r.min_set, 1);
+    assert_eq!(r.max_set, 71);
+    assert_eq!(r.singletons, 1);
+    assert!(r.effective_set < 60.0, "effective set collapsed to {}", r.effective_set);
+    assert!(r.entropy_bits > 1.0);
+
+    // And it must say which attributes did it, or an operator cannot act.
+    assert!(r.distinguishing_attributes.contains(&"microcode".to_string()));
+    assert!(r.distinguishing_attributes.contains(&"pce_svn".to_string()));
+}
+
+/// The policy exit code, so the check drops into a CI pipeline.
+#[test]
+fn a_minimum_set_size_policy_is_enforceable() {
+    let f = Fleet::load(Path::new("examples/fleet-drifted.toml")).unwrap();
+    assert!(partition(&f).unwrap().min_set < 10, "the CLI must exit 1 for --min-set 10");
+}
+```
+
+- [ ] **Step 7: Run everything**
+
+```bash
+cargo test
+cargo run --release -- anonymity --fleet examples/fleet-uniform.toml
+cargo run --release -- anonymity --fleet examples/fleet-drifted.toml
+cargo run --release -- anonymity --fleet examples/fleet-drifted.toml --min-set 10; echo "exit=$?"
+```
+
+Expected: one partition of 120; five partitions of 71/34/11/3/1; `exit=1`.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add -A
+git commit -m "$(cat <<'EOF'
+Add the anonymity-set calculator
+
+Partitions a fleet by TCB configuration and names the attributes doing the
+deanonymizing. On the shipped example, 120 identical machines after six
+weeks of ordinary drift split into 71/34/11/3/1 — so the largest anonymity
+set is 71 and one host is alone, before any credential is presented.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+EOF
+)"
+```
+
+---
+
+### Task 12: The modelled gate at the CLI, results, and the no-panic guarantee
+
+**Files:**
+- Create: `tests/robustness.rs`, `results/README.md`, `scripts/regen-results.sh`, `benches/primitives.rs`
+- Modify: `src/bench.rs`, `src/bin/occultation.rs`, `tests/acceptance.rs`, `.github/workflows/ci.yml`, `README.md`
+
+**Interfaces:**
+- Consumes: everything.
+- Produces: `bench::BenchOptions::with_escrow: bool`; CLI flag `--with-escrow` on `bench`, which needs `--allow-modelled` and exits **3** without it. `results/deterministic/*` and `results/measured/*`.
+
+**Two flags, and why they are not redundant.** `--with-escrow` is a request: include the escrow tag in the composed presentation cost, because the desk study attributes 4.6 ms of its 13.8 ms presentation figure to escrow-tag construction and DLEQ, so a composed path without it is not comparing like with like. `--allow-modelled` is an acknowledgement: the escrow tag is a stub and provides no security. Asking for the thing and accepting what it is are different statements, and this is the one path in the tool where the friction is worth it. Acceptance test 4 is that asking without accepting fails.
+
+- [ ] **Step 1: Write acceptance test 4**
+
+Append to `tests/acceptance.rs`:
+
+```rust
+use std::process::Command;
+
+fn occultation() -> Command {
+    Command::new(env!("CARGO_BIN_EXE_occultation"))
+}
+
+/// Acceptance test 4 — a stub refuses to run without an explicit opt-in.
+#[test]
+fn a_modelled_component_refuses_to_run_without_allow_modelled() {
+    let out = occultation()
+        .args(["bench", "--composed", "--with-escrow", "--iters", "3"])
+        .output()
+        .expect("the binary runs");
+
+    assert_eq!(out.status.code(), Some(3), "requesting a stub without the flag must exit 3");
+
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("--allow-modelled"), "must name the flag: {stderr}");
+    assert!(stderr.contains("no security"), "must say why the flag exists: {stderr}");
+}
+
+#[test]
+fn the_same_command_succeeds_with_allow_modelled_and_warns_loudly() {
+    let out = occultation()
+        .args(["bench", "--composed", "--with-escrow", "--allow-modelled", "--iters", "3"])
+        .output()
+        .expect("the binary runs");
+
+    assert!(out.status.success(), "stderr: {}", String::from_utf8_lossy(&out.stderr));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("MODELLED"), "the warning must reach stderr: {stderr}");
+    assert!(stderr.contains("no security"));
+}
+
+#[test]
+fn a_plain_bench_never_touches_a_stub_and_says_so() {
+    let out = occultation().args(["bench", "--iters", "3"]).output().expect("runs");
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(!stdout.contains("MODELLED"), "no modelled rows without the flag");
+    assert!(stdout.contains("--allow-modelled"), "must explain what is missing: {stdout}");
+}
+
+#[test]
+fn bench_with_allow_modelled_labels_every_stub_row() {
+    let out = occultation()
+        .args(["bench", "--allow-modelled", "--iters", "3"])
+        .output()
+        .expect("runs");
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("ECDAA"));
+    assert!(stdout.contains("escrow"));
+    // Both stub rows plus the footer.
+    assert!(stdout.matches("MODELLED").count() >= 3, "{stdout}");
+}
+
+/// The policy exit codes, end to end, so all four commands drop into CI.
+#[test]
+fn policy_violations_exit_one_and_bad_input_exits_two() {
+    let violation = occultation()
+        .args(["anonymity", "--fleet", "examples/fleet-drifted.toml", "--min-set", "10"])
+        .output()
+        .expect("runs");
+    assert_eq!(violation.status.code(), Some(1));
+
+    let bad_input = occultation()
+        .args(["anonymity", "--fleet", "examples/does-not-exist.toml"])
+        .output()
+        .expect("runs");
+    assert_eq!(bad_input.status.code(), Some(2));
+}
+```
+
+- [ ] **Step 2: Run it to verify it fails**
+
+Run: `cargo test --test acceptance a_modelled_component`
+Expected: FAIL — `--with-escrow` is not a recognised argument.
+
+- [ ] **Step 3: Add `--with-escrow` and the exit-3 path**
+
+In `src/bench.rs`, add `pub with_escrow: bool` to `BenchOptions` (default `false`), and in `composed_report` accept the measured escrow-tag cost so the measured presentation row can include it:
+
+```rust
+/// The measured escrow tag cost, when the operator asked for it and accepted
+/// what it is. `None` means the composed measured path excludes escrow, and
+/// the report says so.
+pub fn composed_report_with(
+    costs: &PrimitiveCosts,
+    escrow_tag: Option<Duration>,
+) -> ComposedReport {
+    let mut report = composed_report(costs);
+    match escrow_tag {
+        Some(tag) => {
+            for row in &mut report.measured {
+                row.composed = compose(row.composed.present + tag, row.composed.verify);
+                row.label = format!("{} + MODELLED escrow tag", row.label);
+            }
+        }
+        None => {
+            for row in &mut report.measured {
+                row.note = Some(
+                    "excludes the escrow tag, which is modelled; the desk study \
+                     attributes 4.6 ms (33%) of presentation to it"
+                        .into(),
+                );
+            }
+        }
+    }
+    report
+}
+```
+
+Keep `composed_report` as the no-escrow case so Task 8's tests are unchanged: `composed_report(costs)` stays exactly as written, and `composed_report_with(costs, None)` adds the explanatory note.
+
+In `src/bin/occultation.rs`, add `#[arg(long)] with_escrow: bool` to `Bench`, and before any work:
+
+```rust
+            if with_escrow && !allow_modelled {
+                eprintln!(
+                    "error: --with-escrow runs the modelled threshold-ElGamal escrow stub, \
+                     which provides no security.\n       Pass --allow-modelled as well if you \
+                     accept that."
+                );
+                return Ok(ExitCode::from(3));
+            }
+```
+
+and thread the measured escrow cost through:
+
+```rust
+            let escrow_tag = if with_escrow {
+                costs.modelled_escrow_tag.as_ref().map(|s| s.median)
+            } else {
+                None
+            };
+            let report = occultation::bench::composed_report_with(&costs, escrow_tag);
+```
+
+Note that `--with-escrow` implies the modelled components are measured, so it must also force `allow_modelled` into `BenchOptions` — which it already is, since the exit-3 guard above means `allow_modelled` is true whenever `with_escrow` is.
+
+- [ ] **Step 4: Write the robustness tests**
+
+Create `tests/robustness.rs`:
+
+```rust
+use occultation::anonymity::{partition, Fleet};
+use occultation::bench::{run_bench, BenchOptions};
+use occultation::bls::expand_message_xmd;
+use occultation::pool::{simulate_burst, BurstConfig};
+use std::time::Duration;
+
+/// Malformed fleet descriptions must surface as errors, never panics.
+#[test]
+fn malformed_fleets_error_rather_than_panic() {
+    let cases = [
+        ("empty file", ""),
+        ("missing name", "[[host]]\nid = \"a\"\n[host.tcb]\nx = \"1\"\n"),
+        ("wrong type for name", "name = 1\n"),
+        ("wrong type for count", "name = \"a\"\n[[host]]\nid = \"h\"\ncount = \"lots\"\n"),
+        ("typo'd table name", "name = \"a\"\n[[hosts]]\nid = \"h\"\n"),
+        ("host missing id", "name = \"a\"\n[[host]]\n[host.tcb]\nx = \"1\"\n"),
+        ("non-string tcb value", "name = \"a\"\n[[host]]\nid = \"h\"\n[host.tcb]\nx = 13\n"),
+        ("unparseable toml", "[[[["),
+    ];
+    for (label, src) in cases {
+        assert!(
+            toml::from_str::<Fleet>(src).is_err(),
+            "{label}: expected a parse error, got a Fleet"
+        );
+    }
+}
+
+/// A fleet that parses but describes nothing must fail in `partition`.
+#[test]
+fn semantically_empty_fleets_error_rather_than_panic() {
+    for src in [
+        "name = \"a\"\n",
+        "name = \"a\"\n[[host]]\nid = \"h\"\ncount = 0\n[host.tcb]\nx = \"1\"\n",
+        "name = \"a\"\n[[host]]\nid = \"h\"\n[host.tcb]\n",
+    ] {
+        let f: Fleet = toml::from_str(src).expect("well-formed TOML");
+        assert!(partition(&f).is_err(), "{src:?}");
+    }
+}
+
+/// Absurd or degenerate burst descriptions must error, not hang or allocate
+/// the machine to death.
+#[test]
+fn degenerate_burst_configurations_error_rather_than_hang() {
+    let base = BurstConfig {
+        capacity: 8,
+        refill_cost: Duration::from_micros(500),
+        online_cost: Duration::from_micros(50),
+        burst_rate_hz: 1_000.0,
+        duration: Duration::from_millis(100),
+        seed: 7,
+    };
+    for (label, cfg) in [
+        ("zero rate", BurstConfig { burst_rate_hz: 0.0, ..base.clone() }),
+        ("negative rate", BurstConfig { burst_rate_hz: -1.0, ..base.clone() }),
+        ("NaN rate", BurstConfig { burst_rate_hz: f64::NAN, ..base.clone() }),
+        ("infinite rate", BurstConfig { burst_rate_hz: f64::INFINITY, ..base.clone() }),
+        ("zero refill cost", BurstConfig { refill_cost: Duration::ZERO, ..base.clone() }),
+        (
+            "absurd request count",
+            BurstConfig {
+                burst_rate_hz: 1e9,
+                duration: Duration::from_secs(86_400),
+                ..base.clone()
+            },
+        ),
+    ] {
+        assert!(simulate_burst(&cfg).is_err(), "{label}");
+    }
+    assert!(simulate_burst(&base).is_ok(), "the base config must still work");
+}
+
+#[test]
+fn a_zero_duration_burst_is_a_no_op_rather_than_an_error() {
+    let cfg = BurstConfig {
+        capacity: 8,
+        refill_cost: Duration::from_micros(500),
+        online_cost: Duration::from_micros(50),
+        burst_rate_hz: 1_000.0,
+        duration: Duration::ZERO,
+        seed: 7,
+    };
+    let r = simulate_burst(&cfg).unwrap();
+    assert_eq!(r.requests, 0);
+    assert!(!r.exhausted);
+}
+
+#[test]
+fn bad_bench_options_error_rather_than_panic() {
+    assert!(run_bench(&BenchOptions { disclose: 11, attributes: 10, ..Default::default() })
+        .is_err());
+    // Zero attributes is legal: a credential with no attributes still has a
+    // domain and still presents.
+    assert!(run_bench(&BenchOptions {
+        attributes: 0,
+        disclose: 0,
+        iters: 3,
+        ..Default::default()
+    })
+    .is_ok());
+}
+
+#[test]
+fn expand_message_xmd_refuses_impossible_parameters_rather_than_panicking() {
+    assert!(expand_message_xmd(b"m", &[0u8; 256], 32).is_err());
+    assert!(expand_message_xmd(b"m", b"DST", 65_536).is_err());
+}
+```
+
+- [ ] **Step 5: Run them**
+
+Run: `cargo test --test robustness`
+Expected: PASS, 6 tests, no panics. If `bad_bench_options_error_rather_than_panic` fails on the zero-attribute case, `Generators::create(0)` or `b()` needs to handle an empty message list rather than indexing; fix it there rather than forbidding zero attributes.
+
+- [ ] **Step 6: Write the criterion benchmarks**
+
+Create `benches/primitives.rs`. These are for developers optimizing the code; `occultation bench` is the artifact the paper cites. Both must exist, and the README says which is which.
+
+```rust
+use criterion::{criterion_group, criterion_main, Criterion};
+use occultation::bbs::keys::KeyPair;
+use occultation::bbs::proof::{prove, verify_proof_prepared};
+use occultation::bbs::sign::{message_to_scalar, sign};
+use occultation::bls::{Generators, PreparedIssuer};
+use rand_chacha::ChaCha20Rng;
+use rand_core::SeedableRng;
+
+fn bbs(c: &mut Criterion) {
+    let kp = KeyPair::generate(7);
+    let gens = Generators::create(10);
+    let msgs: Vec<_> = (0..10)
+        .map(|i| message_to_scalar(format!("attribute-{i}").as_bytes()).unwrap())
+        .collect();
+    let sig = sign(&kp.sk, &kp.pk, &gens, b"h", &msgs).unwrap();
+    let disclosed = [0usize, 1];
+    let pairs: Vec<_> = disclosed.iter().map(|&i| (i, msgs[i])).collect();
+    let prepared = PreparedIssuer::new(&kp.pk.0);
+    let mut rng = ChaCha20Rng::seed_from_u64(7);
+    let proof = prove(&kp.pk, &gens, b"h", b"ph", &sig, &msgs, &disclosed, &mut rng).unwrap();
+
+    c.bench_function("bbs_present", |b| {
+        b.iter(|| prove(&kp.pk, &gens, b"h", b"ph", &sig, &msgs, &disclosed, &mut rng).unwrap())
+    });
+    c.bench_function("bbs_verify_proof_cached", |b| {
+        b.iter(|| {
+            verify_proof_prepared(&prepared, &kp.pk, &gens, b"h", b"ph", &pairs, &proof).unwrap()
+        })
+    });
+}
+
+criterion_group!(benches, bbs);
+criterion_main!(benches);
+```
+
+- [ ] **Step 7: Write the regeneration script**
+
+Create `scripts/regen-results.sh`:
+
+```bash
+#!/usr/bin/env bash
+# Regenerate every number the paper cites.
+#
+# results/deterministic/ is byte-identical on any host: it is arithmetic over
+# published figures, a seeded simulation, and a partition of a fixed input
+# file. CI regenerates it and fails on a diff.
+#
+# results/measured/ is wall-clock timing and differs per host. CI regenerates
+# it and checks its schema and tool version, but cannot diff it: a build that
+# failed because the machine was 3% busier would train everyone to ignore CI.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+cargo build --release --quiet
+BIN=./target/release/occultation
+mkdir -p results/deterministic results/measured
+
+# --- deterministic -----------------------------------------------------
+"$BIN" anonymity --fleet examples/fleet-uniform.toml --format json \
+  > results/deterministic/anonymity-uniform.json
+"$BIN" anonymity --fleet examples/fleet-drifted.toml --format json \
+  > results/deterministic/anonymity-drifted.json
+"$BIN" anonymity --fleet examples/fleet-drifted.toml \
+  > results/deterministic/anonymity-drifted.txt
+
+for rate in 500 2000 5000; do
+  "$BIN" pool --burst "$rate" --duration 2s --capacity 64 \
+      --refill 700us --online 60us --seed 7 --format json \
+    > "results/deterministic/pool-burst-$rate.json"
+done
+"$BIN" pool --burst 5000 --duration 2s --capacity 64 --refill 700us --online 60us --seed 7 \
+  > results/deterministic/pool-burst-5000.txt
+
+# --- measured ----------------------------------------------------------
+# --iters is high enough that the median is stable and low enough that CI
+# finishes. The host and toolchain are recorded so a stale file is obvious.
+{
+  echo "# generated by scripts/regen-results.sh"
+  echo "# tool_version: $("$BIN" --version)"
+  echo "# host: $(uname -sm)"
+  echo "# rustc: $(rustc --version)"
+} > results/measured/HEADER.txt
+
+"$BIN" bench --iters 200 --format json > results/measured/primitives.json
+"$BIN" bench --iters 200 > results/measured/primitives.txt
+"$BIN" bench --composed --iters 200 --format json > results/measured/composed.json
+"$BIN" bench --composed --iters 200 > results/measured/composed.txt
+
+echo "wrote results/"
+```
+
+Make it executable: `chmod +x scripts/regen-results.sh`
+
+- [ ] **Step 8: Generate, inspect and wire CI**
+
+```bash
+./scripts/regen-results.sh
+cat results/deterministic/anonymity-drifted.txt
+cat results/measured/composed.txt
+```
+
+Create `results/README.md`:
+
+```markdown
+# results
+
+Generated by `../scripts/regen-results.sh`. Committed on purpose: the paper
+cites these numbers. Do not hand-edit.
+
+## `deterministic/`
+
+Byte-identical on any host. Arithmetic over the desk study's published
+figures, a seeded pool simulation, and a partition of a fixed fleet file. CI
+regenerates these and **fails on a diff**, so a stale number cannot outlive a
+code change.
+
+## `measured/`
+
+Wall-clock timings from whatever machine last ran the script — see
+`HEADER.txt` for which. These differ per host and cannot be diffed by CI: a
+build failing because the runner was three percent busier would teach everyone
+to ignore CI. Instead CI regenerates them and checks that the schema is intact
+and the tool version matches the crate version.
+
+**They are not comparable with the desk study's figures**, which came from
+published benchmarks of other hardware. The tool prints both and says so; see
+`composed.txt`.
+```
+
+Append to the `rust` job in `.github/workflows/ci.yml`:
+
+```yaml
+      - name: deterministic results are current
+        run: |
+          ./scripts/regen-results.sh
+          git diff --exit-code results/deterministic/ || {
+            echo "results/deterministic/ is stale — run ./scripts/regen-results.sh and commit"
+            exit 1
+          }
+      - name: measured results have the right shape and version
+        run: |
+          test -s results/measured/composed.json
+          jq -e '.desk_study | length == 3' results/measured/composed.json
+          jq -e '.measured   | length == 3' results/measured/composed.json
+          jq -e '.budget_us == 15000'       results/measured/composed.json
+          grep -q "tool_version: occultation $(cargo pkgid | sed 's/.*[#@]//')" \
+            results/measured/HEADER.txt
+```
+
+- [ ] **Step 9: Finish the README**
+
+Append to `README.md`:
+
+```markdown
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `occultation bench` | primitive costs against the Ed25519 baseline |
+| `occultation bench --composed` | presentation **and** verification against the 15 ms budget |
+| `occultation pool --burst <rate>` | the pre-computation pool under load |
+| `occultation anonymity --fleet <f.toml>` | anonymity set size given TCB diversity |
+
+Exit codes: `0` success, `1` policy violation (`--min-set`, `--max-stall`),
+`2` bad input, `3` a modelled component was requested without
+`--allow-modelled`.
+
+## Two things this tool exists to say
+
+**The naive construction does not fit the latency budget.** The desk study
+assessed BBS+ presentation (~13.8 ms) and verification (~4.2 ms) separately
+against a 15 ms budget and found each acceptable. Their sum is 18 ms. With
+cached pairings it is 14.9 ms — under the limit with 100 microseconds to
+spare, which leaves nothing for the application, the network, or writing
+evidence. `bench --composed` reproduces this. Pre-computation is load-bearing,
+not an optimization.
+
+Measured on modern hardware the absolute figures are roughly an order of
+magnitude smaller, and the tool prints those beside the published ones with
+the divergence stated. The correction stands regardless: it is an error in
+arithmetic, not in hardware.
+
+**Pool exhaustion has exactly two available behaviours and one of them is
+catastrophic.** This tool stalls. It never reuses, and reuse is not
+configurable. Two presentations sharing one blinding factor are linkable on
+sight, and anyone who sees both transcripts recovers the signature scalar and
+every undisclosed attribute by subtraction — the repository contains a test
+that performs the extraction. Stalling is not free either: `pool` reports the
+amplification factor, which is how much of an agent's load an observer can
+read off its response latency.
+
+## Benchmarks: two of them, on purpose
+
+`occultation bench` is the artifact the paper cites: one process, seeded RNG,
+median-of-n, output committed under `results/`. `cargo bench` runs criterion
+microbenchmarks for developers optimizing the code. They will not agree
+exactly and are not meant to.
+
+## Reproducing
+
+```bash
+cargo test                          # includes the four acceptance tests
+./scripts/regen-results.sh          # regenerates everything the paper cites
+```
+```
+
+- [ ] **Step 10: Run everything**
+
+```bash
+cargo fmt && cargo clippy --all-targets -- -D warnings && cargo test
+./scripts/regen-results.sh && git diff --stat results/
+```
+
+Expected: clean lint, all tests pass including the four acceptance tests, and a second run of the script leaves `results/deterministic/` unchanged.
+
+- [ ] **Step 11: Commit**
+
+```bash
+git add -A
+git commit -m "$(cat <<'EOF'
+Gate the escrow stub at the CLI, and wire results into CI
+
+--with-escrow asks for the modelled escrow tag in the composed path;
+--allow-modelled accepts that it has no security. Asking without accepting
+exits 3. Two flags on one path is deliberate friction on the highest-risk
+thing this repository does.
+
+results/ is split: deterministic artifacts are diffed by CI, measured
+timings are regenerated and schema-checked but not diffed, because failing
+a build over scheduler jitter teaches people to ignore CI.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+EOF
+)"
+```
+
+---
+
+### Task 13: The P05 paper skeleton
+
+**Files:**
+- Create: `paper/main.tex`, `paper/references.bib`, `paper/README.md`
+- Modify: `.github/workflows/ci.yml`, `scripts/regen-results.sh`
+
+**Interfaces:**
+- Consumes: `results/` from Task 12.
+- Produces: a `paper/main.pdf` that builds with tectonic.
+
+- [ ] **Step 1: Copy the branded preamble**
+
+Copy the preamble, colour definitions, `\aaimark` command and cover-page TikZ block from `ov-poc-standard/paper/main.tex` (lines 1–110) into `paper/main.tex`. Title: *What Unlinkability Costs at Agent Action Rates: A Composed-Path Measurement and the Soundness of Pre-Computation*. Strapline: "The obvious construction misses the budget, and the fix is a security question nobody has asked."
+
+- [ ] **Step 2: Write the sections that do not depend on unrun experiments**
+
+In the plain declarative register the existing paper uses:
+
+- `\section{The Problem}` — open issue 2, the tension between a hash-chained anchored log and unlinkability, and the observation that every other part of the standard pushes toward more identifiable evidence.
+- `\section{What Others Have Built}` — DAA (Brickell–Camenisch–Chen, CCS 2004) and ECDAA in TPM 2.0 / ISO 20008; Camenisch–Lysyanskaya, Idemix, U-Prove, BBS+ over BLS12-381 and its IETF/W3C track; SPSEQ-UC; group and ring signatures with their opening authority; Privacy Pass (RFC 9578) and VOPRF; threshold ElGamal and DLEQ; *Keys Under Doormats* and the Clipper Chip's specific failure modes; OHTTP. State plainly that the mechanisms are mature and the application is not.
+- `\section{The Construction We Measured}` — the four layers, with an explicit table of which parts this paper implements, which it implements without interoperability, and which it models. **This table must match `README.md`'s three-way split exactly.**
+- `\section{Measuring the Composed Path}` — the method: why present-and-verify must be assessed as one path, and why the tool reports published and measured profiles side by side.
+- `\section{Is the Pre-Computation Pool Sound?}` — the question P05 raises and the desk study does not: what exhaustion under burst forces. State the two behaviours, state that reuse is not merely a weakening but a disclosure of the credential, and give the extraction. This section can be written now because it is analysis, not measurement.
+- `\section{What We Still Don't Know}` — lead with the four open items this tool does *not* answer: whether a log operator can correlate Pedersen commitments by posting time and size; what tamper-evidence means once the global chain is gone; revocation; and whether an anonymity set built from TCB diversity is even the right set to be measuring.
+
+- [ ] **Step 3: Add placeholdered result sections**
+
+```latex
+\section{Results}
+% RESULTS PLACEHOLDER — populated from ../results/ by scripts/regen-results.sh.
+% Do not type numbers here by hand.
+\input{../results/deterministic/composed-table.tex}
+\input{../results/deterministic/anonymity-table.tex}
+\input{../results/measured/primitives-table.tex}
+```
+
+Extend `scripts/regen-results.sh` to emit those three `tabular` environments alongside the JSON it already writes, so the paper reads generated LaTeX rather than a hand-copied table. `composed-table.tex` and `anonymity-table.tex` go under `deterministic/` and are diffed by CI; `primitives-table.tex` goes under `measured/` and is not.
+
+- [ ] **Step 4: Write `paper/README.md`**
+
+Mirror `ov-poc-standard/paper/README.md`: build instructions (`tectonic -Z shell-escape main.tex`) and a pre-submission checklist covering co-author consent, citation verification, a numbers refresh via `scripts/regen-results.sh`, and arXiv metadata (cs.CR primary, cs.CY secondary; Apache-2.0, which arXiv accepts as a submission licence). Add one item the sibling checklists do not have:
+
+> **Modelled-component audit.** Every claim in the paper that rests on ECDAA
+> or threshold escrow must say so in the sentence that makes it, not in a
+> footnote. Re-read the results section looking for any figure that would
+> mislead a reader who skipped §3's table.
+
+- [ ] **Step 5: Build the paper**
+
+Run: `cd paper && tectonic -Z shell-escape main.tex`
+Expected: `main.pdf` produced with no errors.
+
+- [ ] **Step 6: Add the paper build to CI**
+
+```yaml
+  paper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: WtfJoke/setup-tectonic@v3
+      - run: cd paper && tectonic -Z shell-escape main.tex
+```
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add -A
+git commit -m "$(cat <<'EOF'
+Add the P05 paper skeleton
+
+Sections that do not depend on unrun experiments are written, including
+the pool-soundness analysis, which is argument rather than measurement.
+Results sections read generated LaTeX from results/ rather than hand-typed
+numbers. The pre-submission checklist gains a modelled-component audit.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+EOF
+)"
+```
+
+---
+
+## Self-Review
+
+**Spec coverage.** Every `occultation` requirement in the design maps to a task. Real components: Ed25519 baseline (2), BLS12-381 pairings (4), BBS+ presentation and verification (5, 6), the pre-computation pool (9), the anonymity-set calculator (11). Modelled components behind `trait AnonymousAttestation` and `trait EscrowTag` with correct interface, representative cost profile, no security, a warning on execution and the `--allow-modelled` gate (3, 12); the README leads with the distinction (1, 12). All four commands: `bench` (7), `bench --composed` (8), `pool --burst` (10), `anonymity --fleet` (11). All four acceptance tests: composed path over and under budget (8), exhaustion stalls without reuse (10), single-TCB and drifted fleets (11), stubs refuse without the flag (12). The shared skeleton, licensing, CI, `results/` wiring and the no-panic guarantee are Tasks 1 and 12; the paper is Task 13.
+
+**Where this plan interprets rather than follows the spec, and why.** Three places, each argued in the task that makes the choice rather than left implicit:
+
+1. **Acceptance test 1 is asserted against the desk study's published figures, not measured wall-clock** (Task 8). Measured on this host the composed path is ~1.3 ms, so a measured-wall-clock assertion of "exceeds 15 ms" would be false as well as host-dependent. The published composition reproduces identically anywhere and is what the correction is actually about. The measured profile is reported beside it with the divergence stated.
+2. **A three-way real / real-but-not-interoperable / modelled split** rather than the spec's two-way one. Our BBS+ is genuine cryptography but is not validated against the IETF draft's test vectors, and filing it under "real" would overclaim interoperability.
+3. **`results/` is split into diffed and non-diffed halves** (Global Constraints, Task 12), where `parallax` diffs everything. Timings cannot be diffed without failing CI on jitter.
+
+**Deferred deliberately.** The escrow's threshold-opening path is exercised only in unit tests, not from the CLI — there is no `occultation escrow open` command, because a modelled opening has nothing to show. Transport-layer linkability (OHTTP, padding) is out of scope entirely; P05 names it and this tool does not touch it. `pool` simulates refill as a fluid approximation of one worker rather than a discrete-event queue; the approximation is stated in the code and does not affect the exhaustion finding.
+
+**Type consistency.** `Source`, `Measurement`, `BudgetVerdict`, `Composed`, `CostProfile`, `Sample`, `Baseline`, `Provenance`, `AttestationVerdict`, `ModelledPermit`, `Attestation`, `Tag`, `Generators`, `PreparedIssuer`, `BlsError`, `SecretKey`, `PublicKey`, `KeyPair`, `Signature`, `BbsError`, `ProofScalars`, `Proof`, `Row`, `Table`, `Format`, `BenchOptions`, `PrimitiveCosts`, `ComposedRow`, `ComposedReport`, `PoolItem`, `PrecomputationPool`, `PoolError`, `BurstConfig`, `BurstReport`, `Fleet`, `Host`, `Partition`, `AnonymityReport`, `AnonymityError` are each defined once and referenced with matching signatures. `prove_with_scalars` keeps its eight-argument form from Task 6 through Tasks 9 and 10. `compose(present, verify) -> Composed` is stable from Task 1. `composed_report(&PrimitiveCosts)` from Task 8 is extended in Task 12 by a new function rather than a changed signature, so Task 8's tests keep passing.
+
+**Placeholder scan.** No TBDs. Every code step carries real code. Four steps describe content in prose rather than a literal listing — Task 12 step 3's edits to two existing files, Task 13 steps 1, 2 and 4 — and each states the constraint that matters (the paper's real/modelled table must match the README's exactly; the checklist gains a modelled-component audit). Task 10 step 3 leaves one choice open on purpose: how `Duration` serializes into JSON, noting only that it must be microseconds-as-numbers and consistent with `report.rs`.
+
+**Two things a reviewer should check hardest.** Whether any modelled component can reach output without the word `MODELLED` beside it, and whether any budget verdict anywhere is computed from something other than the sum of a presentation and a verification. Those are the two ways this tool could be wrong in a way that matters.
+
+---
+
+## Plan complete
+
+Two execution options:
+
+**1. Subagent-Driven (recommended)** — a fresh subagent per task, reviewed between tasks, fast iteration.
+
+**2. Inline Execution** — tasks executed in this session with batch checkpoints.
