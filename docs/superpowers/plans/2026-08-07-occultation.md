@@ -1643,6 +1643,11 @@ fn every_modelled_invocation_warns() {
     let ecdaa = ModelledEcdaa::new(permit);
     let escrow = ModelledThresholdElGamal::new(permit, 3, 5).expect("3-of-5 is openable");
 
+    // `#[allow]` rather than clippy's suggested type alias: an alias resolves
+    // the boxed trait object's elided lifetime to `'static` at its definition
+    // site, which is incompatible with closures borrowing `ecdaa` and `escrow`
+    // from this stack frame.
+    #[allow(clippy::type_complexity)]
     let checks: Vec<(&str, Box<dyn Fn()>)> = vec![
         ("ModelledEcdaa::attest", Box::new(|| {
             ecdaa.attest(b"measurement").expect("stub cannot fail");
