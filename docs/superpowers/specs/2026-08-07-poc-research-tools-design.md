@@ -57,8 +57,7 @@ Identical across all three repositories so that a contributor who learns one kno
 ├── paper/references.bib
 ├── paper/README.md         build instructions and pre-submission checklist
 ├── .github/workflows/ci.yml    fmt · clippy -D warnings · test · paper build
-├── LICENSE-APACHE
-├── LICENSE-CC-BY-4.0
+├── LICENSE                 Apache-2.0, covering code and paper alike
 └── README.md               includes a "What is real and what is modelled" section
 ```
 
@@ -67,11 +66,14 @@ Non-zero exit codes on policy violations so all three drop into CI pipelines. No
 malformed input — asserted by test, since two of the three tools consume hostile input by design.
 CLI parsing with `clap` derive. Serialization with `serde`.
 
-**Licensing.** `ov-poc-standard` is CC BY 4.0, which is correct for specification text and wrong
-for code — Creative Commons recommends against CC licenses for software, as they carry no patent
-grant and no software-tuned warranty disclaimer. Each repository therefore carries **Apache-2.0 for
-the Rust code** and **CC BY 4.0 for `paper/`**, stated in the README. Copyright is held by Advanced
-AI Society and the Proof-of-Control contributors, matching the existing repositories.
+**Licensing.** Each repository is **Apache-2.0 throughout**, covering the Rust code and the paper
+alike, under a single `LICENSE` file. Copyright is held by Advanced AI Society and the
+Proof-of-Control contributors, matching the existing repositories.
+
+This differs from `ov-poc-standard`, which is CC BY 4.0. Apache-2.0 carries an explicit patent
+grant, which matters here because these repositories contain implementations rather than
+specification text. arXiv accepts Apache-2.0 as a submission licence, so the paper is unaffected at
+submission time.
 
 ---
 
