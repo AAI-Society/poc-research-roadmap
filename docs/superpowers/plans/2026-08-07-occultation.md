@@ -3495,7 +3495,7 @@ Note: `verify_proof` constructing a `PreparedIssuer` on every call means the pla
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `cargo test --lib proof`
-Expected: PASS, 24 tests.
+Expected: PASS, 23 tests.
 
 If `a_presentation_verifies` fails, the algebra is wrong somewhere and no later task can proceed. Check in this order: (1) does `verify` from Task 5 still pass — if not, `B` or `domain` changed; (2) does `recompute` return `true` — if not, the Schnorr layer is wrong and the pairing is fine; (3) if `recompute` is true and the pairing fails, `Bbar` is wrong. Do not "fix" it by loosening an assertion.
 
