@@ -1,3 +1,5 @@
 .DS_Store
 *.pdf
 .claude/
+ov-poc-standard/
+poc_guide/
