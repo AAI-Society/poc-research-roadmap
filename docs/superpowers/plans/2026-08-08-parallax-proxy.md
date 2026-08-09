@@ -673,9 +673,35 @@ fn outcome() -> VerificationOutcome {
     }
 }
 
+/// The five assumptions the attestation itself establishes. `derive` reaches
+/// these from a live quote; `mechanism::assumptions` reaches them from a
+/// written description. They must agree — that is the cross-check.
+const ATTESTATION_CORE: [&str; 5] = [
+    "silicon_and_microcode_integrity",
+    "accurate_collateral_issuance",
+    "quote_signing_honesty",
+    "measurement_injection_resistance",
+    "golden_value_correctness",
+];
+
+/// Everything `derive` emits beyond the core, by family. A live quote carries
+/// facts a written description cannot know — the platform's TCB status, its
+/// PCK flags, the advisories in force, and the proxy's own contribution — so
+/// the two routes are *expected* to differ outside the core. Enumerating the
+/// families here makes that difference deliberate: an assumption that belongs
+/// to no family fails the test rather than quietly widening the gap.
+const EXPECTED_FAMILIES: [&str; 6] = [
+    "proxy",              // the verifier, the cache, the proxy itself
+    "tcb_status",         // one capability per TcbStatus
+    "platform_caveat",    // PCK flags that are True
+    "undeclared_flag",    // PCK flags the certificate does not state
+    "advisory",           // published advisories in force
+    "reference_value",    // never-compared / refuted variants
+];
+
 /// Two independent routes to the same trust set: one from a written
-/// deployment description, one from a live verification. If they disagree,
-/// one of them is wrong and we want to know which.
+/// deployment description, one from a live verification. If they disagree
+/// **on the core**, one of them is wrong and we want to know which.
 #[test]
 fn deriving_from_a_quote_agrees_with_solving_a_description() {
     let d = Deployment::load(Path::new("examples/verified-tdx.toml")).unwrap();
@@ -690,12 +716,22 @@ fn deriving_from_a_quote_agrees_with_solving_a_description() {
         },
     );
 
-    // Compare the attestation half only: `derive` additionally reports the
-    // proxy's own assumptions, which no written description contains.
+    // Compare the attestation core only, and compare (principal, capability)
+    // rather than whole assumptions. Three fields legitimately differ between
+    // the routes and none of them is a disagreement about trust:
+    //
+    //   `mechanism` — a fixed tag here, `canonical(spec)` in the calculus.
+    //   `latency`   — the live route measures the collateral's real expiry;
+    //                 a description can only state the operator's declared
+    //                 refresh interval.
+    //   `impact`    — identical today, but not what this test is about.
+    //
+    // Comparing whole assumptions would make the two routes permanently
+    // `Incomparable` for reasons that have nothing to do with who is trusted.
     let attestation_only: BTreeSet<(String, String)> = derived
         .0
         .iter()
-        .filter(|a| a.mechanism != "proxy")
+        .filter(|a| ATTESTATION_CORE.contains(&a.capability.as_str()))
         .map(|a| (a.principal.clone(), a.capability.clone()))
         .collect();
 
@@ -711,19 +747,54 @@ fn deriving_from_a_quote_agrees_with_solving_a_description() {
     );
 }
 
-/// The proxy's own assumptions are exactly what the written description
-/// cannot know about.
+/// Everything outside the core must belong to a named family. This is the
+/// half of the cross-check that keeps the gap between the two routes honest:
+/// a live quote legitimately establishes more than a description can state,
+/// but each of those extras has to be something we decided to emit, not
+/// something that accumulated.
 #[test]
-fn the_proxy_adds_three_assumptions_no_description_contains() {
+fn every_assumption_outside_the_core_belongs_to_a_named_family() {
     let derived = derive(
         &outcome(),
         &DeriveConfig {
             reference_values: vec![[0xAB; 48]],
             verifier_id: "urn:parallax:dcap-qvl:0.6.1".into(),
             cache_ttl: Latency::Bounded(43_200),
+            now_secs: NOW,
         },
     );
-    assert_eq!(derived.0.iter().filter(|a| a.mechanism == "proxy").count(), 3);
+
+    let unclassified: Vec<&str> = derived
+        .0
+        .iter()
+        .filter(|a| !ATTESTATION_CORE.contains(&a.capability.as_str()))
+        .filter(|a| !EXPECTED_FAMILIES.iter().any(|f| a.mechanism.contains(f)))
+        .map(|a| a.capability.as_str())
+        .collect();
+
+    assert!(
+        unclassified.is_empty(),
+        "these assumptions belong to no declared family — either add the \
+         family deliberately or stop emitting them: {unclassified:?}"
+    );
+}
+
+/// The proxy's own assumptions are exactly what the written description
+/// cannot know about, and they must be present — a verifier that omits
+/// itself from the trust set it reports is committing the overclaim this
+/// whole project exists to attack.
+#[test]
+fn the_proxy_declares_its_own_contribution() {
+    let derived = derive(
+        &outcome(),
+        &DeriveConfig {
+            reference_values: vec![[0xAB; 48]],
+            verifier_id: "urn:parallax:dcap-qvl:0.6.1".into(),
+            cache_ttl: Latency::Bounded(43_200),
+            now_secs: NOW,
+        },
+    );
+    assert!(derived.0.iter().any(|a| a.mechanism.contains("proxy")));
 }
 ```
 
