@@ -131,10 +131,37 @@ that appears to verify attestation and does not is the exact failure this
 repository spent thirteen reviews making impossible, and it would be worse
 here because it sits in production.
 
-Implementation preference, in order: an existing crate that does the full
-chain; then Intel DCAP via FFI (which costs the crate's `#![forbid(unsafe_code)]`
-and must be isolated behind a feature flag if so); then `Unverified` with an
-honest explanation. **Writing a partial verifier is not on the list.**
+**Resolved before planning, by compile-probe.** [`dcap-qvl`](https://crates.io/crates/dcap-qvl)
+0.6.1 does the full chain, supports TDX, and compiles clean against this stack.
+Its shape is exactly right for a proxy:
+
+```rust
+// synchronous, offline, no network on the request path
+pub fn verify(raw_quote: &[u8], collateral: &QuoteCollateralV3, now_secs: u64)
+    -> Result<VerifiedReport>;
+
+// async, separate, cacheable — fetched out of band
+pub async fn CollateralClient::fetch(&self, quote: &[u8]) -> Result<QuoteCollateralV3>;
+```
+
+The split means collateral is fetched and cached out of band while
+verification stays synchronous and in-line, so a PCS round trip never lands on
+a request. `TcbStatus` is the real enum — `UpToDate`, `OutOfDate`,
+`ConfigurationNeeded`, `Revoked` and the rest — not a boolean, so findings can
+report *why* a TCB is stale.
+
+The crate's only `unsafe` is in `src/ffi.rs`, where it exposes a C API
+outward. Nothing on our consumption path is unsafe, so
+`#![forbid(unsafe_code)]` in this crate is unaffected.
+
+**Two prohibitions for the plan.** `dangerous_verify_with_tcb_override` is
+public and must never be called — it is well named and it is the one API that
+would turn this into a verifier that verifies nothing. And a stale collateral
+cache must degrade to `Unverified { why }`, never to `Verified`.
+
+`Unverified` therefore stops being the expected phase-1 outcome and becomes
+the honest failure mode: PCS unreachable, collateral expired, unsupported
+platform. **Writing a partial verifier remains off the list.**
 
 ### The meter
 
@@ -208,7 +235,7 @@ Follows the repository's existing discipline, and two items are load-bearing:
 
 | Risk | Mitigation |
 | --- | --- |
-| No existing crate verifies the full TDX chain properly | Establish this **before** planning, not in implementation. If none does, phase 1 ships with `Unverified` and an honest banner, and the linkability measurement still stands on its own |
+| ~~No existing crate verifies the full TDX chain properly~~ | **Resolved by compile-probe before planning:** `dcap-qvl` 0.6.1 does the full chain for TDX, pure Rust on our path, with offline verification and separately cacheable collateral. Remaining risk is operational — collateral freshness — which degrades to `Unverified`, never to `Verified` |
 | Observe-only tools get installed and ignored | The finding is genuinely alarming when true, and it has a report and CI surface rather than only a dashboard |
 | Operators demand "seen before" | Refuse. Document the refusal and the reason in the README, as with reuse |
 | The proxy adds latency to a production path | Measure it with the existing harness and publish the number; the meter is a hash and two map lookups |
