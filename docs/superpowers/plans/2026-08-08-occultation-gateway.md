@@ -1512,9 +1512,37 @@ Run: `cargo test --lib gateway::finding` → FAIL, `cannot find type Finding`.
 ```
 agent authorized ✓   quote: VERIFIED (TDX 1.0, TCB UpToDate)
   anonymity set     3 of 1847 sessions
-  varying           microcode, pce_svn
+  varying           tee_tcb_svn, xfam
   session binding   NONE — a captured quote is reusable
 ```
+
+> **AMENDMENT (pre-flight before Task 5, coordinator).** The sample above
+> originally read `varying  microcode, pce_svn`. **Neither attribute exists.**
+> Task 4 established against the `dcap-qvl` source that there is no
+> `pce_svn` and no `microcode` on any report type, and that reaching the PCK
+> extension's PCE SVN would require an API that hands over *two* hardware
+> identifiers. The attributes the verifier actually produces are:
+>
+> - **TDX 1.0** — `fmspc`, `tee_tcb_svn`, `mr_seam`, `mr_signer_seam`,
+>   `seam_attributes`, `td_attributes`, `xfam`
+> - **TDX 1.5** — the above plus `tee_tcb_svn2`
+> - **SGX** — `fmspc`, `cpu_svn`, `attributes`, `misc_select`, `isv_prod_id`,
+>   `isv_svn`
+>
+> Task 5's meter is key-agnostic — it hashes whatever `BTreeMap` it is handed,
+> so its synthetic test fixtures may keep any key names they like. **Task 6 and
+> Task 8 are not**: a rendered finding and a README are operator-facing, and
+> naming an attribute the gateway can never report is the same defect as a
+> README describing a caveat the code no longer prints. Any illustrative
+> attribute name in a docstring, a sample rendering, or the README must come
+> from the lists above.
+>
+> Note also that `occultation`'s existing README and `docs/STANDARD-MAP.md`
+> describe the TCB fingerprint in the desk study's terms — "TDX module version,
+> CPU SVN, PCE SVN, microcode revision, QE identity, PCS chain." That prose
+> describes the *concept* and predates any measurement. Task 8 should not
+> silently contradict it; where the gateway's actual attribute set differs,
+> say so rather than quietly substituting one list for the other.
 
 with `UNVERIFIED (<why>)` or `INVALID (<reason>)` replacing the first line's parenthetical, and the anonymity block omitted entirely when `observation` is `None`. `Metrics` registers three counters — `gateway_requests_total{verdict}`, `gateway_quotes_total{platform,tcb_status}`, `gateway_unverified_total{why_kind}` — where `why_kind` is a small enum-derived string (`collateral_absent`, `collateral_stale`, `pcs_unreachable`, `unsupported_platform`), never the free-text reason.
 
