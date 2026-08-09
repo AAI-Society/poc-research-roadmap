@@ -35,6 +35,35 @@ Read from the repo at plan time:
 - `rcgen` is currently a **`[dev-dependencies]`** entry pinned to the `ring` backend, with a comment explaining that choice avoids a C toolchain. The sidecar needs it at runtime, so it becomes an optional real dependency — keep the `ring` backend and the reasoning.
 - The existing feature `fetch-collateral` gates `reqwest`/`tokio`, with `required-features` on its binary. Follow that pattern exactly for the new `attest` feature.
 
+## What Task 1 established (measured on real C3 hardware — do not re-derive)
+
+The spike ran and **the design is viable**. These are the facts later tasks
+build on; all are recorded in `docs/spike-rtmr-gcp.md` and backed by fixtures in
+`tests/fixtures/gcp-c3-rtmr/`.
+
+- **RTMR3 extension works** on a stock GCP C3 — no kernel module, no custom
+  image — by writing exactly 48 bytes to
+  `/sys/class/misc/tdx_guest/measurements/rtmr3:sha384`, as root. The
+  `/dev/tdx_guest` ioctl and `configfs-tsm` do **not** offer extension;
+  `configfs-tsm` remains the interface for quote *generation*.
+- The extended value **reaches the next quote**, which still verifies
+  `UpToDate`.
+- **The transition is exactly `SHA-384(old ‖ digest)`, and RTMR3 is all-zero at
+  boot.** So the reference value for a workload measurement `D` is
+  `SHA-384(0⁴⁸ ‖ D)` — computable with no hardware. This is why Task 2 can pin a
+  real reference value offline.
+- Extension is **deterministic across boots** and correctly **not** within one
+  boot. Task 4's restart refusal is therefore measured, not assumed: only a
+  reboot resets an RTMR.
+- **MRTD is byte-identical** across two instances and the pre-existing
+  `gcp-c3-tdx` fixture captured on a different day. Reference values are usable.
+
+**Correction to Task 1's own text:** the plan told the spike to diff byte offset
+`472..520` for RTMR3. That is wrong — `472` is **RTMR2**, and it is non-zero,
+plausible-looking, and unchanged by extension, so the mistake fails silently.
+The absolute offsets in a TDX quote are MRTD `184`, RTMR0 `376`, RTMR1 `424`,
+RTMR2 `472`, **RTMR3 `520`**, `report_data` `568..632`. Use `520`.
+
 ## File Structure
 
 | File | Responsibility |
@@ -144,7 +173,11 @@ EOF
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `pub const QUOTE_OID: &str`, `pub const DIGEST_LEN: usize`, `pub const LAYOUT: &str`, `pub fn expected_report_data(spki_der: &[u8]) -> [u8; 64]`, and `pub fn workload_measurement(image_digest: &[u8]) -> [u8; 48]`.
+- Produces: `pub const QUOTE_OID: &str`, `pub const DIGEST_LEN: usize`, `pub const LAYOUT: &str`, `pub fn expected_report_data(spki_der: &[u8]) -> [u8; 64]`, `pub fn workload_measurement(image_digest: &[u8]) -> [u8; 48]`, and `pub fn expected_rtmr3(measurement: &[u8; 48]) -> [u8; 48]`.
+
+**Note this task is in the default build, not behind `attest`.** The verifier
+needs `expected_rtmr3` to write a reference value, and it is the attester that
+is feature-gated.
 
 Attester and verifier disagreeing on any of this produces a binding that always
 fails, or one that passes on the wrong input. One definition, used by both.
@@ -188,6 +221,31 @@ mod tests {
         // this pins rather than hides.
         let bytes = [0xabu8; 32];
         assert_ne!(workload_measurement(&bytes), workload_measurement(b"sha256:abab"));
+    }
+
+    /// The one test here that is checked against real hardware rather than
+    /// against itself. Task 1 extended a known 48-byte digest into a freshly
+    /// booted C3 and captured the quote; if `expected_rtmr3` cannot reproduce
+    /// what that machine reported, an operator's reference value is wrong and
+    /// every deployment is refused.
+    #[test]
+    fn expected_rtmr3_reproduces_what_the_hardware_reported() {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/gcp-c3-rtmr");
+        let digest: [u8; 48] = std::fs::read(dir.join("extended-digest.bin"))
+            .expect("the extended digest")
+            .try_into()
+            .expect("48 bytes");
+        let after = std::fs::read(dir.join("quote-after.bin")).expect("the quote");
+
+        // RTMR3 sits at absolute offset 520. Note 472 is RTMR2 — non-zero and
+        // plausible-looking, which is how that mistake survives review.
+        let reported = &after[520..568];
+        assert_eq!(&expected_rtmr3(&digest)[..], reported);
+
+        // And the starting point the derivation assumes really was zero.
+        let before = std::fs::read(dir.join("quote-before.bin")).expect("the quote");
+        assert_eq!(&before[520..568], &[0u8; 48][..]);
     }
 
     #[test]
@@ -257,6 +315,24 @@ pub fn expected_report_data(spki_der: &[u8]) -> [u8; 64] {
 /// an encoding (case, prefix) and the bytes do not.
 pub fn workload_measurement(image_digest: &[u8]) -> [u8; 48] {
     Sha384::digest(image_digest).into()
+}
+
+/// The RTMR3 a VM will report after the sidecar extends `measurement` into it,
+/// starting from a fresh boot.
+///
+/// This is what lets an operator write a reference value *before* deploying.
+/// Reading RTMR3 off the running deployment instead would be circular — a
+/// reference derived from the image you are checking cannot detect that you
+/// deployed the wrong image, which is the entire property the pair exists to
+/// demonstrate.
+///
+/// Both facts here are measured, not assumed (`docs/spike-rtmr-gcp.md`): RTMR3
+/// is all-zero at boot, and the extension is `SHA-384(old ‖ digest)`.
+pub fn expected_rtmr3(measurement: &[u8; 48]) -> [u8; 48] {
+    let mut h = Sha384::new();
+    h.update([0u8; 48]);
+    h.update(measurement);
+    h.finalize().into()
 }
 ```
 
@@ -535,11 +611,17 @@ EOF
 - Consumes: Task 1's findings.
 - Produces: `pub fn request_quote(report_data: &[u8; 64]) -> Result<Vec<u8>, TsmError>` and `pub fn extend_rtmr3(digest: &[u8; 48]) -> Result<(), RtmrError>`.
 
-**Write this task against what the spike actually found**, not against this
-plan's expectation. If the spike reported BLOCKED, implement `tsm.rs` only, make
-`extend_rtmr3` return `RtmrError::Unsupported` with the spike's reasoning in the
-message, and record in your report that the sidecar attests the VM rather than
-the workload.
+**The spike ran and did not report BLOCKED.** Read `docs/spike-rtmr-gcp.md`
+before writing this. The interface it established:
+
+> Write exactly 48 bytes to `/sys/class/misc/tdx_guest/measurements/rtmr3:sha384`,
+> as root. The `/dev/tdx_guest` ioctl and `configfs-tsm` do **not** offer
+> extension; `configfs-tsm` remains the quote-generation interface used by
+> `request_quote`.
+
+Take the path as a parameter — `extend_rtmr3_at(base: &Path, digest: &[u8; 48])`
+— so the guards are testable without hardware, exactly as `request_quote_at`
+does, with `extend_rtmr3` supplying the real path.
 
 - [ ] **Step 1: Write the failing tests**
 
