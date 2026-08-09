@@ -1674,13 +1674,48 @@ EOF
 
 **Files:**
 - Create: `tests/gateway_hostile.rs`, `tests/fixtures/README.md`
-- Modify: `README.md`, `.github/workflows/ci.yml`, `docs/STANDARD-MAP.md`
+- Modify: `README.md`, `.github/workflows/ci.yml`, `docs/STANDARD-MAP.md`, `src/bin/gateway.rs`, `src/gateway/mod.rs`
 
 **Interfaces:**
 - Consumes: everything.
 - Produces: the shipped artifact.
 
 In the spirit of `transit`'s hostile server: an agent that misbehaves in every way the gateway must survive.
+
+> **AMENDMENT (added after Task 7's review, coordinator).** Two things this
+> task must now also do. Neither was in the plan and both were found by review
+> rather than by execution.
+>
+> **A. Serve the metrics.** Task 6 registers `gateway_requests_total`,
+> `gateway_quotes_total` and `gateway_unverified_total`, and Task 7 records to
+> them — but **the plan specifies a scrape endpoint in no task**, so they are
+> write-only for the whole phase and no task owned fixing that. Task 6's entire
+> label-cardinality argument and Task 7's `WhyKind` reasoning are currently
+> unobservable. Add a `/metrics` endpoint on **its own listener**, bound
+> separately from the proxy and defaulting to loopback.
+>
+> It must not be reachable through the forwarding path: the proxy forwards
+> *every* request unconditionally, so a `/metrics` route on the proxy port
+> would either be swallowed by the forward or, worse, carve out a path the
+> upstream can no longer serve. A separate listener is the only shape that
+> preserves "every request forwards." Assert both halves by test — that the
+> metrics listener answers, and that `GET /metrics` on the *proxy* port still
+> reaches the upstream unchanged.
+>
+> **B. Inherit five guards from Task 4, not two.** The CI copy of the PPID
+> guards must carry all three greps (`\.ppid`, `VerifiedReport`, **and** the
+> report's type name), the lexical formatter ban **using `?}` rather than
+> `:?`**, and the grep exit-status check. A copy carrying `:?` reproduces
+> exactly the `{:#?}` hole that Task 4 spent a second fix round closing, and a
+> copy without the exit-status check passes vacuously whenever grep cannot
+> search — which is what a wrong working directory in CI looks like.
+>
+> Task 4's review also left one guard open that this task should close, and it
+> is a single line: the lexical ban is scoped to `verify.rs` via
+> `include_str!`, so **another file could call `dcap_qvl::verify::verify` and
+> format the result** — naming no banned token, in a file the ban cannot see.
+> Today that call appears only at `verify.rs:323` and `:536`. A fourth grep
+> asserting exactly that closes it.
 
 - [ ] **Step 1: Write the hostile agent tests**
 
