@@ -66,6 +66,121 @@ Recorded here so a task does not quietly grow one:
 
 The proxy forwards before it measures. That ordering is the fail-open guarantee, and it is established in this task so no later task can invert it.
 
+**AMENDMENT (supersedes the code blocks below where they conflict).** The Task 1
+review found two defects that this plan mandated, both approved for change
+because they constrain the interface Tasks 2-6 build against.
+
+**A1 — Bodies stream; they are not buffered.** The original signature
+`Response<Full<Bytes>>` forces `collect()` on both bodies. An agent-facing API
+normally serves SSE or token streams, and `collect()` on `text/event-stream`
+does not resolve until the stream ends — so every streaming endpoint behind
+the gateway hangs while its buffer grows. N large bodies also OOM the process,
+which unlike a panic is a total outage rather than one dropped connection.
+
+```rust
+use http_body_util::{BodyExt, Limited, combinators::BoxBody};
+
+/// Cap the request body. A proxy that buffers on an attacker's say-so is a
+/// denial-of-service primitive.
+pub const MAX_REQUEST_BODY: usize = 8 * 1024 * 1024;
+
+async fn forward(req: Request<Incoming>, upstream: hyper::Uri)
+    -> Result<Response<BoxBody<Bytes, hyper::Error>>, std::convert::Infallible>;
+```
+
+The response body is passed through unbuffered — `resp.into_body().boxed()` —
+so SSE reaches the client token by token. The request body is wrapped in
+`Limited::new(body, MAX_REQUEST_BODY)`; over-cap becomes a 502 like every other
+failure, never a dropped connection.
+
+**A2 — The hook runs AFTER the forward, on an owned snapshot.** The prose above
+said "forward first, measure second" and the original code did the opposite.
+`catch_unwind` bounds panics but not *time*: with a synchronous `Fn` invoked on
+the connection's task ahead of the forward, a hook doing blocking I/O — a PCCS
+collateral fetch is the obvious Task 3 candidate — stalls a runtime worker with
+the request still in hand. That is the exact hazard the ordering existed to
+prevent.
+
+```rust
+/// What a hook sees: an owned copy of the head, never the live request.
+///
+/// Owned so the hook can run *after* the forward, which is what makes a slow
+/// hook unable to delay a response. The body is deliberately absent — no
+/// measurement in this design needs it.
+#[derive(Clone, Debug)]
+pub struct RequestHead {
+    pub method: hyper::Method,
+    pub path_and_query: String,
+    pub headers: hyper::HeaderMap,
+}
+
+pub struct Hooks {
+    pub on_request: Box<dyn Fn(&RequestHead) + Send + Sync>,
+}
+```
+
+and `handle` becomes:
+
+```rust
+let head = RequestHead::snapshot(&req);
+let resp = forward(req, upstream).await;          // FIRST
+if std::panic::catch_unwind(AssertUnwindSafe(|| (hooks.on_request)(&head))).is_err() {
+    log::error!("gateway hook panicked; request already forwarded, no finding recorded");
+}
+resp
+```
+
+**A3 — Strip hop-by-hop headers in BOTH directions.** The original copies the
+request `HeaderMap` wholesale and removes only `Host`, while re-framing the
+body — so a client sending `Transfer-Encoding: chunked` produces an upstream
+request carrying both `Transfer-Encoding` and `Content-Length`, which is the
+canonical request-smuggling shape. The response side already strips
+`Transfer-Encoding` for exactly this reason. Strip the full RFC 9110 set —
+`Connection`, `Keep-Alive`, `TE`, `Trailer`, `Transfer-Encoding`, `Upgrade`,
+`Proxy-Authenticate`, `Proxy-Authorization` — plus anything named in
+`Connection`, on both request and response.
+
+**A4 — `forward` returns `Infallible`, not `hyper::Error`.** "This never returns
+`Err`" was a doc comment; one `?` added in a later task would silently
+reintroduce the dropped connection this task exists to prevent, and no test
+would fail. Make the compiler enforce it.
+
+**A5 — Validate the upstream at startup, in `serve`, before binding.** Reject a
+non-`http` scheme or a missing authority. `HttpConnector` is plaintext-only, so
+`--upstream https://api.internal` currently starts cleanly and answers 100% of
+traffic with a synthesised 502 — fail-open in the narrow sense, and the fronted
+API entirely unreachable, which is the outcome this task exists to prevent.
+
+**A6 — Two more tests, because the three below verify only the path.** Deleting
+the response-header copy leaves all three green while stripping `Content-Type`,
+`Set-Cookie` and CORS off every response; the request side is likewise untested
+on method, headers and body.
+
+```rust
+#[tokio::test]
+async fn method_headers_and_body_all_reach_the_upstream() {
+    // `..._is_forwarded_unchanged` below asserts only the path. This asserts
+    // the rest of "unchanged", and kills the mutations that drop the request
+    // headers, hard-code GET, or send an empty body.
+    let upstream = spawn_reflecting_upstream().await;   // echoes method, a header, body len
+    let gw = spawn_gateway(upstream, Hooks::noop()).await;
+    let body = post(&gw, "/x", &[("x-agent", "acme")], b"hello").await.unwrap();
+    assert!(body.contains("POST"), "{body}");
+    assert!(body.contains("x-agent=acme"), "{body}");
+    assert!(body.contains("len=5"), "{body}");
+}
+
+#[tokio::test]
+async fn upstream_response_headers_reach_the_client() {
+    // Deleting the response header copy silently strips Content-Type,
+    // Set-Cookie and CORS off every response, and nothing else notices.
+    let upstream = spawn_upstream_with_header("content-type", "application/json").await;
+    let gw = spawn_gateway(upstream, Hooks::noop()).await;
+    assert_eq!(header_of(&gw, "/x", "content-type").await.unwrap(), "application/json");
+}
+```
+
+
 - [ ] **Step 1: Add dependencies**
 
 Add to `Cargo.toml`:
