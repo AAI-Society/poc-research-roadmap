@@ -1180,11 +1180,39 @@ validator C10.3.3 describes.
 
 - [ ] **Step 4: Integration test against a local RA-TLS server**
 
-Stand up a test server in-process whose certificate carries the fixture quote in
-the configured OID, point the proxy at it, and assert: a request is forwarded
-when policy permits; the connection is refused with `502` and the assumption
-named when policy forbids; a certificate with no quote extension is refused
-naming the OID; a quote bound to a different key is refused.
+> **The committed fixture cannot serve the happy path, and you must not make it.**
+> Its `report_data` is 64 zero bytes — a capture-time placeholder, documented in
+> `tests/fixtures/gcp-c3-tdx/PROVENANCE.md` — so `check_binding` correctly
+> returns `Unbound` and the proxy **must** refuse it. There is no real quote in
+> the tree whose `report_data` commits to a key we hold.
+>
+> The pressure at this step will be to weaken the binding check, skip it in the
+> test, or add an "allow unbound" flag so a forwarding test can pass. **Do none
+> of those.** The binding is the difference between "a TDX machine exists
+> somewhere" and "this connection terminates inside one"; a proxy that forwards
+> without it provides the appearance of a check, which this project holds to be
+> worse than no check.
+>
+> Take one of these instead, and say which you chose:
+> 1. **Test forwarding with a synthetic quote** whose `report_data` genuinely
+>    commits to the test server's key, and mark it clearly as synthetic. The
+>    binding logic is then exercised for real; only the quote's provenance is
+>    fake, and the real fixture still covers the verification chain.
+> 2. **Recapture a fixture** on TDX hardware with a real digest in
+>    `report_data` — `scripts/capture-on-gcp.sh` provisions the instance, and
+>    the capture script would need to write a key digest instead of zeros.
+> 3. **Ship without a forwarding integration test**, covering the allow path at
+>    the `decide()` level only, and record the gap prominently.
+>
+> Whichever you choose, the refusal paths below are testable today with the real
+> fixture and must be tested with it.
+
+Stand up a test server in-process whose certificate carries a quote in the
+configured OID, point the proxy at it, and assert: the connection is refused
+with `502` and the assumption named when policy forbids; a certificate with no
+quote extension is refused naming the OID; **the real fixture's quote is refused
+as `Unbound`**; and a quote bound to a different key is refused. Cover the
+forwarding path by whichever route you chose above.
 
 - [ ] **Step 5: Write `examples/proxy.toml`**
 
