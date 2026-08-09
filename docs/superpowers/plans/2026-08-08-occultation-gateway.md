@@ -17,6 +17,27 @@
 - **`dcap_qvl::verify::dangerous_verify_with_tcb_override` must never be called.** It is public, it is well named, and it is the single API that would turn this into a verifier that verifies nothing. Asserted by a grep test in CI.
 - **A stale or missing collateral cache degrades to `Unverified { why }`, never to `Verified`.** Asserted by test.
 - **The PPID must never be stored, logged, rendered, or serialized.** `dcap_qvl`'s `VerifiedReport` carries `ppid: Vec<u8>` — a unique per-platform hardware identifier. A gateway built to stop a relying party accumulating a dossier is handed a hardware serial on every successful verification. It is dropped at the verifier boundary and never crosses into a finding, a metric label, or the meter. Asserted by test on the finding's serialized form.
+
+  > **AMENDMENT (verified against the 0.6.1 source before Task 4).** This is
+  > sharper than the plan first stated, and the mechanism matters. `verify.rs:244`
+  > reads `#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]` on
+  > `VerifiedReport`, and `ppid` carries an explicit `#[serde(with = "serde_bytes")]`.
+  > So the type is **directly serializable and the PPID field is deliberately
+  > wired for it**: a single `serde_json::to_string(&report)` — or a
+  > `#[derive(Serialize)]` on any struct that holds one, or a `{report:?}` in a
+  > log line, since `Debug` is derived too — emits the hardware serial with no
+  > warning. The constraint is therefore not merely "do not write it out"; it is
+  > **`VerifiedReport` must never be stored in a field, returned from a public
+  > function, or passed to any formatter.** Destructure it at the verifier
+  > boundary, take only `status`, `advisory_ids`, and the TCB fields off
+  > `report`, and let the rest drop in that scope.
+  >
+  > Two fields the plan did not know about also exist: `qe_status` and
+  > `platform_status`, both `TcbStatusWithAdvisory { status: TcbStatus,
+  > advisory_ids: Vec<String> }`. These are richer than the flat
+  > `status: String` the plan uses. `status: String` remains correct and is what
+  > Task 4 reads; the others are noted so a later task can report *which* of the
+  > QE and the platform is stale rather than only that something is.
 - **The meter holds no session-to-fingerprint map and no joint distribution across attributes.** It cannot answer "has this agent been here before," and that refusal is asserted by test, not documented.
 - **Every reported number carries its provenance**, following the existing `occultation` convention: `Source::MeasuredHere` / `Published` / and here also `Unverified`. Nothing untagged.
 - Library errors use `thiserror`; the binary uses `anyhow`. **No panics on malformed input** — this parses hostile bytes by design.
@@ -573,7 +594,25 @@ EOF
 
 **Interfaces:**
 - Consumes: `GatewayConfig` (Task 1).
-- Produces: `CollateralCache::new(pccs_url: String, ttl: Duration) -> CollateralCache`; `CollateralCache::get(&self, fmspc: &str) -> CacheLookup`; `enum CacheLookup { Fresh(Arc<QuoteCollateralV3>), Stale { age: Duration }, Absent }`; `CollateralCache::refresh(&self, quote: &[u8]) -> Result<(), CollateralError>` (async, called off the request path).
+- Produces: `CollateralCache::new(pccs_url: String, ttl: Duration) -> CollateralCache`; `CollateralCache::get(&self, fmspc: &Fmspc) -> CacheLookup` (**AMENDED — see below**); `pub fn fmspc_to_hex(&Fmspc) -> String`; `enum CacheLookup { Fresh(Arc<QuoteCollateralV3>), Stale { age: Duration }, Absent }`; `CollateralCache::refresh(&self, quote: &[u8]) -> Result<(), CollateralError>` (async, called off the request path).
+
+> **AMENDMENT (post-review, coordinator ruling).** Two of this task's API
+> assumptions were wrong, confirmed against the `dcap-qvl` 0.6.1 source:
+> `quote_fmspc` is `dcap_qvl::intel::quote_fmspc(&Quote) -> Result<Fmspc>`,
+> not `dcap_qvl::quote::quote_fmspc(&[u8])`, so raw bytes need `Quote::parse`
+> first; and `Fmspc` is `[u8; 6]`, not a `String`.
+>
+> That makes `get(&self, fmspc: &str)` a divergence surface rather than an
+> interface: Task 4 holds an `Fmspc` and would have to render its own hex to
+> call it. Two renderings of one platform is exactly the silent-miss failure
+> this cache must not have — `refresh` stores under one spelling, `get` reads
+> another, the platform misses forever, and the gateway reports `Unverified`
+> permanently with nothing failing loudly.
+>
+> So the signature becomes `get(&self, fmspc: &Fmspc)`, `fmspc_to_hex` becomes
+> `pub`, and the `&str` form survives only as a `#[cfg(test)]` helper. One
+> renderer, reachable by every caller, and the type system forbids a second.
+> Task 4's `verify` is amended to match.
 
 The split exists because `dcap_qvl::verify::verify` is synchronous and takes collateral as an argument, while fetching collateral is an async network call. Keeping them apart is what stops a PCS round trip landing on a request.
 
@@ -904,17 +943,30 @@ impl QuoteVerifier {
     /// would turn this into a verifier that verifies nothing. A grep test in
     /// CI enforces its absence from the whole crate.
     pub fn verify(&self, raw: &RawAttestation) -> QuoteVerdict {
-        let fmspc = match dcap_qvl::quote::quote_fmspc(&raw.bytes) {
+        // AMENDED after Task 3. The API this originally called does not exist.
+        // The real route is `Quote::parse(&[u8])` then
+        // `dcap_qvl::intel::quote_fmspc(&Quote) -> Result<Fmspc>`, where
+        // `Fmspc = [u8; 6]` — a byte array, not a string, so it neither keys a
+        // map nor renders with `{fmspc}` directly. `CollateralCache::get` now
+        // takes `&Fmspc` and `fmspc_to_hex` is public, so exactly one hex
+        // rendering exists in the crate and a lookup cannot miss because two
+        // call sites spelled the same platform differently.
+        let parsed = match dcap_qvl::quote::Quote::parse(&raw.bytes) {
+            Ok(q) => q,
+            Err(e) => return QuoteVerdict::Invalid { reason: format!("not a DCAP quote: {e}") },
+        };
+        let fmspc = match dcap_qvl::intel::quote_fmspc(&parsed) {
             Ok(f) => f,
             Err(e) => return QuoteVerdict::Invalid { reason: format!("not a DCAP quote: {e}") },
         };
+        let fmspc_hex = crate::gateway::collateral::fmspc_to_hex(&fmspc);
 
         let collateral = match self.cache.get(&fmspc) {
             CacheLookup::Fresh(c) => c,
             CacheLookup::Stale { age } => {
                 return QuoteVerdict::Unverified {
                     why: format!(
-                        "collateral for FMSPC {fmspc} is {}s old and past its TTL; \
+                        "collateral for FMSPC {fmspc_hex} is {}s old and past its TTL; \
                          verifying against expired TCB data could report a revoked \
                          platform as up to date",
                         age.as_secs()
@@ -923,7 +975,7 @@ impl QuoteVerifier {
             }
             CacheLookup::Absent => {
                 return QuoteVerdict::Unverified {
-                    why: format!("no collateral cached for FMSPC {fmspc} yet"),
+                    why: format!("no collateral cached for FMSPC {fmspc_hex} yet"),
                 }
             }
         };
