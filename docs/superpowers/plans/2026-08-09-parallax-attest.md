@@ -144,7 +144,7 @@ EOF
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `pub const QUOTE_OID: &str`, `pub const DIGEST_LEN: usize`, `pub const LAYOUT: &str`, and `pub fn expected_report_data(spki_der: &[u8]) -> [u8; 64]`.
+- Produces: `pub const QUOTE_OID: &str`, `pub const DIGEST_LEN: usize`, `pub const LAYOUT: &str`, `pub fn expected_report_data(spki_der: &[u8]) -> [u8; 64]`, and `pub fn workload_measurement(image_digest: &[u8]) -> [u8; 48]`.
 
 Attester and verifier disagreeing on any of this produces a binding that always
 fails, or one that passes on the wrong input. One definition, used by both.
@@ -169,6 +169,25 @@ mod tests {
     #[test]
     fn different_keys_give_different_report_data() {
         assert_ne!(expected_report_data(b"key one"), expected_report_data(b"key two"));
+    }
+
+    #[test]
+    fn a_workload_measurement_is_the_48_bytes_an_rtmr_takes() {
+        // RTMRs are SHA-384; a container digest is SHA-256. This is the bridge,
+        // and both the attester and whoever predicts the reference value must
+        // cross it the same way.
+        let m = workload_measurement(&[0xab; 32]);
+        assert_eq!(m.len(), 48);
+        assert_ne!(workload_measurement(&[0xab; 32]), workload_measurement(&[0xac; 32]));
+    }
+
+    #[test]
+    fn the_measurement_is_over_bytes_not_the_textual_digest() {
+        // "sha256:abab…" and the bytes it denotes must not both be accepted at
+        // this layer — callers parse first, so a caller that forgets is a bug
+        // this pins rather than hides.
+        let bytes = [0xabu8; 32];
+        assert_ne!(workload_measurement(&bytes), workload_measurement(b"sha256:abab"));
     }
 
     #[test]
@@ -223,7 +242,25 @@ pub fn expected_report_data(spki_der: &[u8]) -> [u8; 64] {
     rd[..DIGEST_LEN].copy_from_slice(&Sha256::digest(spki_der));
     rd
 }
+
+/// The value extended into RTMR3 to measure a workload.
+///
+/// RTMRs are SHA-384 and `TDG.MR.RTMR.EXTEND` takes 48 bytes, but a container
+/// image digest is a 32-byte SHA-256. Something has to bridge that, and the
+/// choice is arbitrary — which is exactly why it lives here rather than being
+/// made twice. The attester extends this value; whoever computes a reference
+/// value must predict it. If the two pick differently, RTMR3 never matches and
+/// the proxy reports "you deployed an image you did not declare" about a
+/// deployment that is correct.
+///
+/// Takes the digest **bytes**, not the `sha256:…` string: the textual form has
+/// an encoding (case, prefix) and the bytes do not.
+pub fn workload_measurement(image_digest: &[u8]) -> [u8; 48] {
+    Sha384::digest(image_digest).into()
+}
 ```
+
+Import `Sha384` alongside `Sha256`; `sha2` already provides it.
 
 Add `pub mod ratls;` to `src/lib.rs`.
 
@@ -270,7 +307,7 @@ EOF
 
 **Interfaces:**
 - Consumes: `ratls::{QUOTE_OID, expected_report_data}` (Task 2), `check_binding` and `quote_from_cert` (existing).
-- Produces: `pub struct MintedIdentity { pub cert_der: Vec<u8>, pub key_der: Vec<u8>, pub report_data: [u8; 64] }` and `pub fn mint(quote: &[u8], subject: &str) -> Result<MintedIdentity, MintError>`.
+- Produces: `pub struct MintedIdentity { pub cert_der: Vec<u8>, pub key_der: Vec<u8>, pub report_data: [u8; 64] }` and `pub fn mint_with_key(quote: &[u8], subject: &str, key: rcgen::KeyPair, report_data: [u8; 64]) -> Result<MintedIdentity, MintError>`. There is no `mint` wrapper — Task 5's `prepare` is the only caller and it holds the key already.
 
 **This task produces the test the whole design rests on:** mint a certificate,
 verify it with the real `check_binding`, in one process. It is the only test
@@ -579,9 +616,15 @@ the work, `request_quote(...)` calls it with the real
 
 - [ ] **Step 4: Implement the extension, per the spike**
 
-`extend_rtmr3` takes a 48-byte SHA-384 digest, because RTMRs are SHA-384. If the
-spike found the interface, implement it. If not, return `RtmrError::Unsupported`
-whose message names what was tried and points at `docs/spike-rtmr-gcp.md`.
+`extend_rtmr3` takes a 48-byte SHA-384 value, because that is what
+`TDG.MR.RTMR.EXTEND` accepts. **It does not compute that value** — the caller
+passes `ratls::workload_measurement(..)` (Task 2), which is the one place the
+SHA-256-image-digest-to-SHA-384-RTMR-value mapping is defined. Do not hash
+anything here; a second mapping is the bug Task 2's doc comment describes.
+
+If the spike found the interface, implement it. If not, return
+`RtmrError::Unsupported` whose message names what was tried and points at
+`docs/spike-rtmr-gcp.md`.
 
 Include the restart guard the spike established: if extension is cumulative
 within a boot, a second start produces an RTMR3 no reference value matches, so
@@ -647,10 +690,21 @@ The socket work must not be entangled with the decision to start. Write:
 pub fn prepare(cfg: &AttestConfig) -> Result<MintedIdentity, PrepareError>;
 ```
 
-`prepare` computes the workload digest, extends RTMR3, generates a keypair,
-computes `report_data`, requests the quote, and mints. Tests cover: a config
-naming neither `image_digest` nor `binary` is refused; naming both is refused; a
-missing binary path is refused; and `PrepareError` renders each cause.
+`prepare` resolves the workload to 32 digest bytes — parsing the `sha256:` hex
+from `image_digest`, or hashing the file named by `binary` — passes them through
+`ratls::workload_measurement` to get the 48-byte RTMR value, extends RTMR3,
+generates a keypair, computes `report_data`, requests the quote, and mints.
+
+Parsing `image_digest` is the one place that touches the textual form, so it is
+where the strictness belongs: require the `sha256:` prefix, require exactly 64
+hex characters, and reject anything else rather than truncating or padding. A
+config carrying a half-typed digest must not produce a quote.
+
+Tests cover: a config naming neither `image_digest` nor `binary` is refused;
+naming both is refused; a missing binary path is refused; a digest with a bad
+prefix, wrong length, or non-hex characters is refused; an uppercase-hex digest
+and its lowercase spelling resolve to the same measurement; and `PrepareError`
+renders each cause.
 
 - [ ] **Step 3: Wire the listener**
 
