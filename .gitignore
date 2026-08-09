@@ -3,3 +3,7 @@
 .claude/
 ov-poc-standard/
 poc_guide/
+
+# Subagent-driven-development scratch: ledgers, task briefs, reports and
+# review packages. Recoverable from git log; not part of the record.
+.superpowers/sdd/
