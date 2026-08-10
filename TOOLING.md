@@ -24,7 +24,8 @@ a record, signs it, or chains it to the previous one. The values exist and are
 thrown away.**
 
 Ten of the twenty-one fields have nothing behind them at all — no tool computes
-them, no tool checks them, and no design exists for the tool that would.
+them and no tool checks them. Nine of the ten now have a design; `path_summary_hash`
+has neither, and cannot until [P04](papers/P04-bounded-summaries.md) is answered.
 
 Since [T1](#t1--poc-audit--the-map-it-drew) shipped, this is no longer an assertion.
 Run against the standard's own strongest positive vector, with every optional input
@@ -64,7 +65,7 @@ it — not that a schema validator confirmed its type.
 | 13 | `policy_bundle_hash` | — | — | T3 | — |
 | 14 | `target_resource` | `transit guard` | — | T3 | — |
 | 15 | `canonical_snapshot_hash` | `transit guard` | `poc-audit` → `transit` | T3 | [P02](papers/P02-effect-binding.md) ✓ |
-| 16 | `path_summary_hash` | — | — | T3 | [P04](papers/P04-bounded-summaries.md) |
+| 16 | `path_summary_hash` | — | — | **none** | [P04](papers/P04-bounded-summaries.md) |
 | 17 | `verdict` | `transit guard` | — | T3 | [P02](papers/P02-effect-binding.md) ✓ |
 | 18 | `alg` | — | *structural only* | T2 | — |
 | 19 | `platform` | `parallax-attest` | *live only* † | T2 · T5 | [P01](papers/P01-trust-calculus.md) ✓ |
@@ -92,9 +93,20 @@ three of the six shipped tools point. The record has nineteen other fields.
 through `tree_size` — have no tool on either side, and they are not five independent
 gaps. They are one missing component, described five times.
 
-**`transit guard` computes three fields and writes down none of them.** It already
-sits in the request path, already canonicalizes the body, already decides. Row 14, 15
-and 17 are a serialization problem, not a research problem.
+**`transit guard` computes three fields and writes down none of them — but only one of
+them is free.** An earlier version of this row called T3 "a serialization problem, not a
+research problem." Reading `guard.rs` to design the extension refuted that, and the
+correction is worth keeping visible:
+
+- `jcs::digest` digests the request **body**, not a snapshot, so two requests posting the
+  same body to different endpoints collide today.
+- It is `""` for every bodiless request, where the schema requires a `sha-256:…` value.
+- **Nothing at all is computed on a rejection.** Every `reject(…)` returns early, so
+  `DENY` records — the ones an auditor most wants — carry no snapshot hash.
+- `policy_bundle_hash` over the config alone cannot re-derive a verdict: `transit`'s own
+  fix rounds prove the same TOML with different code produces different verdicts.
+
+Only `verdict` is a pure serialization problem. The rest is work.
 
 ### What `poc-audit` actually reports
 
@@ -164,14 +176,21 @@ operator gets a real, end-to-end, verified property.
 Six steps. Each row states the number of the twenty-one fields a signed record
 carries after it, because a roadmap whose steps do not move a number is a wish list.
 
+**The arc ends at 20, not 21.** `path_summary_hash` has no tool and no step, because
+[P04](papers/P04-bounded-summaries.md) has to be answered before anything can fill it
+honestly — see T3. An earlier version of this table ended at 21 by assigning that field
+to T3, which reading the guard's source refuted. A roadmap that reaches 100% by
+allocating an unsolved problem to a step is the failure this document was written
+against.
+
 | | Tool | Status | Closes | Fields in a record, after |
 | :--: | --- | --- | --- | :--: |
 | **T1** | [`poc-audit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/poc-audit) | **shipped** | nothing | 0 |
-| **T2** | `ephemeris` — new repo | **not designed** | 1–4, 8–12, 18, 19–21 | **13** |
-| **T3** | `transit guard` — extension | guard shipped | 13–17 | **18** |
-| **T4** | `spectrum` — new repo | **not designed** | 7 | **19** |
-| **T5** | `parallax-proxy` — extension | shipped | *checks* 2, 3 | 19 |
-| **T6** | delegation chain — unnamed | **not designed** | 5, 6 | **21** |
+| **T2** | [`ephemeris`](docs/superpowers/specs/2026-08-10-ephemeris-design.md) — new repo | designed, phase 1 planned | 1–4, 8–12, 18, 19–21 | **13** |
+| **T3** | [`transit guard`](docs/superpowers/specs/2026-08-10-transit-guard-claims-design.md) — extension | guard shipped, extension designed | 13, 14, 15, 17 | **17** |
+| **T4** | [`spectrum`](docs/superpowers/specs/2026-08-10-spectrum-design.md) — new repo | designed, forks open | 7 | **18** |
+| **T5** | [`parallax-proxy`](docs/superpowers/specs/2026-08-10-parallax-freshness-design.md) — extension | designed, forks open | *checks* 2, 3, 19, 20 | 18 |
+| **T6** | delegation chain — unnamed | **not designed** | 5, 6 | **20** |
 
 ### T1 · `poc-audit` — the map it drew
 
@@ -220,34 +239,61 @@ unlinkability, which is why it is a new repo rather than a fourth binary somewhe
 
 ### T3 · `transit guard` — write down what it already knows
 
-An extension, not a repository. The guard computes the canonical digest, the normalized
-target and the decision, then discards all three. Teaching it to emit a partial record
-for `ephemeris` to chain closes five fields and is mostly serialization.
+An extension, not a repository — [designed](docs/superpowers/specs/2026-08-10-transit-guard-claims-design.md),
+forks open. The guard sits in the request path, canonicalizes, decides, and discards all
+of it. Teaching it to emit a claim for `ephemeris` to chain closes **four** fields.
 
-Four of the five are. `path_summary_hash` is not: nothing computes a bounded path
-summary anywhere, which is [P04](papers/P04-bounded-summaries.md)'s subject. P04's
-reported null result was caused by nothing reading the structure under test, and the
-guard would be the first thing that reads it. `policy_bundle_hash` needs the guard's
-config to have a stable identity, which is the defect class
+It was four rather than five, and the roadmap said five, because
+`path_summary_hash` cannot be filled here. That is not a scheduling choice.
+[P04](papers/P04-bounded-summaries.md)'s subject is bounded path summaries, and the guard
+is structurally the wrong place for one: `decide` is pure, `serve` runs 256 concurrent
+threads with no ordering, and nothing carries agent identity — so even a correct fold
+would be process-local, and **a guard restart would clear every path.** That is P04's own
+eviction attack, available without an attacker. The field ships unfilled and the row above
+says `none`, because a fabricated summary digest is worse than an absent one.
+
+`policy_bundle_hash` carries the other trap. Hashing the config alone cannot re-derive a
+verdict — `transit`'s own fix rounds proved the same TOML with different code produces
+different verdicts, when `/v1/search/../transfer` and `/v1/tra%6Esfer` both used to get
+through. The design answers it with a `decide_semantics` version pinned by a golden
+corpus, which is the defect class
 [`parallax` learned the hard way](docs/parallax-outcomes.md#the-defect-pattern-worth-carrying-to-transit-and-occultation):
 anything feeding a digest must have its derivation written down and tested in both
 directions.
 
 ### T4 · `spectrum` — one field, and nobody knows what goes in it
 
-A new repository that decomposes an agent deployment into its constituent parts and
-digests the result, filling `agbom_digest`.
+A new repository — [designed](docs/superpowers/specs/2026-08-10-spectrum-design.md),
+and the only spec here marked *draft, forks unresolved* rather than approved.
 
 One field, ranked fourth, because [P10](papers/P10-agbom.md) is genuinely open: the
 question is not how to digest a bill of materials but what belongs in one for a system
 whose composition changes at runtime. A tool built before that is answered would digest
-the wrong thing convincingly. It is placed after T3 for that reason and not because the
-engineering is hard.
+the wrong thing convincingly.
+
+The design's answer is that **`spectrum` does not define an AgBOM.** It defines a digest
+over a *declared* component set, ships several sets as named falsifiable hypotheses, puts
+the profile id inside the digest so two theories of composition cannot be compared, and
+refuses to load a profile claiming full capture. Its build order splits at the point where
+a fork becomes an assertion: everything up to the detection harness holds under every
+resolution of the eight open forks, and wiring a profile into a signed record does not.
+
+Designing it also found four problems in the standard's own artifacts, before any tool
+exists. The sharpest: **C1.2.2 requires a link nobody can compute** — input records
+hash-linked to the actions *"they influenced."* Influence is why-provenance. Everyone
+meeting that requirement today is meeting *was present in the context* and calling it
+influence.
+
+Expect a **negative** result. If the design's prediction holds, an AgBOM is a
+change-detection control over the capability surface and an inventory control over
+content — which upgrades tool substitution rather than the context-poisoning rows P10 was
+aiming at. Worth building for the mechanism behind the finding, but anyone approving it
+should expect that field graded down, not up.
 
 ### T5 · Freshness, the challenge, and re-checking the claim
 
-An extension to `parallax-proxy`. It emits no new field. It makes four existing ones
-mean something.
+An extension to `parallax` — [designed](docs/superpowers/specs/2026-08-10-parallax-freshness-design.md),
+forks open. It emits no new field. It makes four existing ones mean something.
 
 Two are the replay pair: a staleness bound on `iat`, and actually issuing the `nonce`
 that C7.1.4 says defeats replay. A record with an unchecked `iat` and a `nonce` nobody
@@ -255,6 +301,13 @@ chose is a record that replays. Its research is
 [P03](papers/P03-attestation-freshness.md), and the measurement that motivated P03 — a
 hardware quote costs 39.5 ms — is the reason a staleness bound is a policy decision
 rather than a constant.
+
+Designing it produced the fact that makes freshness hard: **a TDX quote carries no
+timestamp.** `VerificationOutcome`'s date fields date the collateral, not the quote. And
+`parallax-attest` quotes once at process start, so an attestation's real age is the
+sidecar's uptime — invisible to any verifier. Freshness therefore cannot be *read*, only
+*challenged*, which is why the nonce and the staleness bound are one piece of work rather
+than two.
 
 The other two arrived from running T1. `platform` and `measurement` are `ASSERTED`
 because verifying a live quote and re-checking a record's claim that a quote was
@@ -314,9 +367,18 @@ reason [`poc-audit`](docs/superpowers/specs/2026-08-09-poc-audit-design.md) prin
 overall result: a single summary word is what lets a deployment claim a tier it has not
 earned, which is [P01](papers/P01-trust-calculus.md)'s documented finding.
 
-**Nothing here is described as existing until it does.** `ephemeris`, `spectrum` and T6
-are not designed. Seven tools have shipped and are linked above, and the one row in the
-coverage table that turned out to be wrong was found by running one of them.
+**Nothing here is described as existing until it does.** Seven tools have shipped and are
+linked above. `ephemeris` is designed with Phase 1 planned; `transit guard`'s extension,
+`spectrum` and T5 are designed with forks open; T6 is not designed and `path_summary_hash`
+has no step at all.
+
+**Three rows in this table were wrong, and each was corrected by doing the work rather
+than re-reading the schema.** `platform` and `measurement` were found by running
+`poc-audit`. T3's field count was found by reading `guard.rs` to design its extension.
+The arc's endpoint was found by discovering that `path_summary_hash` has nowhere to live.
+That is the method this programme claims for itself — three of the standard's own
+requirements exist because building forced a precision the prose never did — and it
+applies to the roadmap as much as to the specification.
 
 ---
 

@@ -159,8 +159,8 @@ components both believing the other computes a field.
 
 | | Fields | Why there |
 | --- | --- | --- |
-| **The caller supplies** | `agent_id`, `initiating_user`, `interception_point`, `target_resource`, `canonical_snapshot_hash`, `path_summary_hash`, `policy_bundle_hash`, `verdict`, and an action ID | Only the enforcement point knows what it decided and over which bytes. `ephemeris` cannot recompute a verdict it did not make |
-| **`ephemeris` adds** | `iss`, `iat`, `nonce`, `eat_profile`, `step_index`, `chain_head`, `merkle_root`, `tree_size`, `alg`, `signature`, and `submods.attestation` | These are properties of the log and its trust domain, not of the action |
+| **The caller supplies** | `agent_id`, `initiating_user`, `interception_point`, `target_resource`, `canonical_snapshot_hash`, `path_summary_hash`, `policy_bundle_hash`, `verdict`, `nonce`, and an action ID | Only the enforcement point knows what it decided and over which bytes. `ephemeris` cannot recompute a verdict it did not make |
+| **`ephemeris` adds** | `iss`, `iat`, `eat_profile`, `step_index`, `chain_head`, `merkle_root`, `tree_size`, `alg`, `signature`, and `submods.attestation` | These are properties of the log and its trust domain, not of the action |
 | **Neither supplies** | `agbom_digest` | No AgBOM tooling exists. It is `spectrum`, roadmap T4. The record carries whatever the caller passes and `ephemeris` asserts nothing about it |
 
 Two consequences worth stating. `interception_point` is a *caller-supplied value* even
@@ -173,6 +173,29 @@ not be read as checking them.
 A claim missing a required caller-supplied field is refused, not defaulted. A defaulted
 field is a record that looks complete and is not, which is the failure mode this whole
 programme exists to attack.
+
+### `nonce` is caller-supplied, and this is a finding
+
+An earlier draft of this design listed `nonce` among the fields `ephemeris` adds. That was
+wrong, and the error is worth recording rather than quietly fixing.
+
+C7.1.4 calls the nonce a **relying-party challenge**: it binds the token to one request and
+defeats replay. A challenge minted by the party being challenged defeats nothing. If
+`ephemeris` generates its own nonce, the field is present, the record validates, and the
+replay property it exists to provide is absent — the exact shape of failure this programme
+was founded to attack.
+
+So the caller supplies it, and **a claim without one is refused.** Which surfaces the
+finding: the schema marks `nonce` **required**, and nothing in this ecosystem issues one.
+No relying party challenges an agent action today. Every record anyone emits is therefore
+either schema-invalid or carries a self-minted value that provides no replay resistance.
+
+`ephemeris` refuses rather than papering over it, and the practical path is T5's: a relying
+party publishes an **epoch challenge**, and the enforcement point passes it through. That
+makes the declared refresh interval observable and is the only variant whose cost is
+budgetable against the 39.5 ms quote. Resolving it belongs to
+[P03](../../../papers/P03-attestation-freshness.md) and T5, not here — but `ephemeris` must
+not make the problem invisible by generating a value.
 
 ### Records per action
 
