@@ -391,6 +391,12 @@ linked above. `ephemeris` is designed with Phase 1 planned; `transit guard`'s ex
 designed and `path_summary_hash`
 has no step at all.
 
+**Building the tools has produced eight findings against the standard itself**, recorded
+in [`docs/standard-findings.md`](docs/standard-findings.md). Six are invisible to
+`validate.py`, because they are defects in what a field *means* and a schema checks
+shape. Five of them produce a record that validates cleanly while failing to carry the
+property the field exists to provide.
+
 **Three rows in this table were wrong, and each was corrected by doing the work rather
 than re-reading the schema.** `platform` and `measurement` were found by running
 `poc-audit`. T3's field count was found by reading `guard.rs` to design its extension.
