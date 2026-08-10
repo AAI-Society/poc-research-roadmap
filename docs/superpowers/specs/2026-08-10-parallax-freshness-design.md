@@ -1,8 +1,27 @@
 # Design — T5: freshness, the challenge, and re-checking the claim
 
-**Date:** 2026-08-10 · **Status:** draft, forks unresolved · **Repo:** extension to
+**Date:** 2026-08-10 · **Status:** approved, forks resolved 2026-08-10, ready for implementation planning · **Repo:** extension to
 [`parallax`](https://github.com/Task-force-for-AI-agents-in-Healthcare/parallax) —
 no new repository
+
+---
+
+## Forks, resolved 2026-08-10
+
+All ten are closed. Each block below is retained with its reasoning intact.
+
+| fork | resolution |
+| --- | --- |
+| **A — what `measurement` denotes** | **The MRTD: `sha-384:<96 hex>`.** Any other shape is refused for `platform: INTEL_TDX` as a *record* error, not a comparison failure. This makes the standard's own `hardware-attested.json` invalid — its value is `sha-256:` + 64 hex, 32 bytes, and a TDX MRTD is 48 — and that ships as a finding filed upstream rather than as a reason to weaken the check. **A second, separate defect goes with it:** the schema's `digest` pattern does not tie the tag to the length, so `sha-384:` followed by 64 hex validates. |
+| **B — MRTD or RTMR3** | **Both**, using the already shipped and hardware-validated `expected_rtmr3`. **This lands as a correction to `parallax` before the offline path is built.** Today `parallax-attest` extends RTMR3 with the workload digest and nothing ever reads it — `src/derive.rs:452` says so outright — so the pair attests the workload and the gate does not check it. Building the offline path first would enshrine that defect in a second place. |
+| **C — does the record carry the quote** | **Not in T5.** T5 ships comparison-only, and splits the verdict from day one: `ESTABLISHED (compared)` versus `ESTABLISHED (re-verified)`. Carrying the quote is a schema addition and belongs to T2, which already holds it for C7.2.4 key binding. The split exists so the thin verdict can never be mistaken for the strong one — which is exactly the conflation that produced `TOOLING.md`'s † correction. |
+| **D — unit of the bound** | Time only, `max_attestation_age`, named so `max_actions_per_attestation` is additive. The action counter is per-attester state nothing currently holds. |
+| **E — unknowable age** | `require_fresh = true\|false`, default `false`, mirroring `require_reference_values`. An unmeasurable attestation is not a stale one, and refusing by default would break every deployment of the shipped pair on upgrade. |
+| **F — what `--as-of` defaults to** | Required, no default. `SystemTime::now` stays in the binary where it already is; an operator who wants now writes `--as-of now`. |
+| **G — freshness mechanism** | **Epoch by default**, folding a published epoch into `report_data[32..64]`; the per-connection challenge stays reachable because P03's adaptive-refresh question needs it. Epoch is one quote per interval regardless of traffic, and it mechanizes C7.2.3 — the declared interval and the enforced one become one number. **Stated honestly: an epoch bounds an honest attester only.** A compromised one replays within its epoch. |
+| **H — who issues the `nonce`** | **The caller.** `ephemeris`'s design has been corrected: `nonce` moved to the caller-supplied column and a claim without one is refused. A challenge minted by the party being challenged defeats nothing. |
+| **I — layout versioning** | A `GateConfig` policy field. Configuration that participates in what was verified belongs in configuration, where it is visible and compared — the same reasoning as `RootCa::Custom` carrying a whole PEM. |
+| **J — where the offline path is invoked** | `parallax replay` as a default-build subcommand, **and** `poc-audit` calling the library. Not `parallax-proxy --replay`, which would pull `reqwest` and `rustls` in to read a file. |
 
 ---
 
@@ -159,7 +178,7 @@ Worth recording separately: the digest pattern does not tie the algorithm tag to
 so `sha-384:` followed by 64 hex characters validates. That is a schema defect and it
 belongs upstream in `ov-poc-standard`, not worked around here.
 
-> **OPEN FORK A — what `measurement` denotes.**
+> **RESOLVED — FORK A — what `measurement` denotes.**
 >
 > - **A1. `sha-384:<96 hex>` is the MRTD**, and the tool refuses any other shape for
 >   `platform: INTEL_TDX` as a *record* error, not a comparison failure. Honest and
@@ -179,7 +198,7 @@ belongs upstream in `ov-poc-standard`, not worked around here.
 > A1 also makes `rt_mrs` reachable later: RTMR3 is where `parallax-attest`'s workload
 > measurement lands, and MRTD is firmware.
 
-> **OPEN FORK B — MRTD or RTMR3.**
+> **RESOLVED — FORK B — MRTD or RTMR3.**
 >
 > `parallax-proxy` compares `mr_td` and nothing else (`src/derive.rs:235`), while
 > `parallax-attest`'s entire contribution is extending **RTMR3** with the workload digest
@@ -198,7 +217,7 @@ belongs upstream in `ov-poc-standard`, not worked around here.
 > defect in the live gate that T5 would otherwise inherit and enshrine. It is also the
 > only version under which `measurement` means "your code" rather than "your firmware".
 
-> **OPEN FORK C — does the record carry the quote?**
+> **RESOLVED — FORK C — does the record carry the quote?**
 >
 > Without a quote there is nothing cryptographic to re-verify: the offline path is a
 > string comparison and its verdict should say so in those words.
@@ -287,7 +306,7 @@ bound on `iat` bounds the record's age and says nothing about the measurement's 
 is the quantity C7.2.3 is actually about. **T5 must not report a fresh `iat` as a satisfied
 C7.2.3.**
 
-> **OPEN FORK D — the unit of the bound.** C7.2.3 says "the longest period, **or** the
+> **RESOLVED — FORK D — the unit of the bound.** C7.2.3 says "the longest period, **or** the
 > largest number of actions".
 >
 > - **D1. Time only.** One field, enforceable by anything holding a clock.
@@ -303,7 +322,7 @@ C7.2.3.**
 > close a row is disproportionate. Record D2 as the thing P03 must answer before the
 > guidance C7.2.3 lacks can be written.
 
-> **OPEN FORK E — what the proxy does when it cannot determine age at all.**
+> **RESOLVED — FORK E — what the proxy does when it cannot determine age at all.**
 >
 > Against an unmodified attester, age is unknowable. That is not a stale attestation; it
 > is an unmeasurable one.
@@ -322,7 +341,7 @@ C7.2.3.**
 > deployment believes something it has no evidence for. E3 also gives the warning text
 > somewhere to name the fix.
 
-> **OPEN FORK F — what the offline path evaluates `iat` against.**
+> **RESOLVED — FORK F — what the offline path evaluates `iat` against.**
 >
 > - **F1. `--as-of <rfc3339>`, required.** No default. Nothing is read from the system
 >   clock anywhere, including the binary. Reproducible by construction.
@@ -381,7 +400,7 @@ That costs 39.5 ms per challenge, which is the number that started P03. A per-co
 challenge puts a full quote in every connection setup. That is exactly why C7.2.3 exists,
 and it is why the challenge is not the default.
 
-> **OPEN FORK G — the freshness mechanism.** RFC 9334 §10 gives two; this is the choice.
+> **RESOLVED — FORK G — the freshness mechanism.** RFC 9334 §10 gives two; this is the choice.
 >
 > - **G1. Per-connection nonce.** Strongest: every connection carries evidence produced
 >   after the verifier spoke. Costs 39.5 ms per connection and makes the attester's
@@ -407,7 +426,7 @@ and it is why the challenge is not the default.
 > the assumption belongs in the trust set with `Impact::Soundness` rather than in a
 > footnote.
 
-> **OPEN FORK H — who issues the `nonce` in a record.**
+> **RESOLVED — FORK H — who issues the `nonce` in a record.**
 >
 > A live handshake has an obvious relying party. A record does not. [T2's
 > design](2026-08-10-ephemeris-design.md#what-the-claim-carries-and-what-ephemeris-adds)
@@ -429,7 +448,7 @@ and it is why the challenge is not the default.
 > absent field: it validates. This fork is the highest-consequence one in this document
 > because it changes a spec that is about to be implemented.
 
-> **OPEN FORK I — layout versioning.**
+> **RESOLVED — FORK I — layout versioning.**
 >
 > - **I1. A `GateConfig` policy field**, `report_data_layout = "spki" | "spki+challenge"`,
 >   with the attester configured to match. Simple; a mismatch is an operator error caught
@@ -477,7 +496,7 @@ The live half — the `[freshness]` table, the challenge issuance, the round-tri
 `parallax-proxy` and its config, plus the attester's endpoint in `parallax-attest`. Both
 extend binaries that already exist.
 
-> **OPEN FORK J — where the offline path is invoked.**
+> **RESOLVED — FORK J — where the offline path is invoked.**
 >
 > - **J1. `parallax replay <record.json> --proxy-config <p.toml> --as-of <t>`** — a new
 >   subcommand on the default-build binary, beside `solve`, `compare`, `check`, `tiers`

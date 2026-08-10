@@ -187,9 +187,9 @@ against.
 | :--: | --- | --- | --- | :--: |
 | **T1** | [`poc-audit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/poc-audit) | **shipped** | nothing | 0 |
 | **T2** | [`ephemeris`](docs/superpowers/specs/2026-08-10-ephemeris-design.md) — new repo | designed, phase 1 planned | 1–4, 8–12, 18, 19–21 | **13** |
-| **T3** | [`transit guard`](docs/superpowers/specs/2026-08-10-transit-guard-claims-design.md) — extension | guard shipped, extension designed | 13, 14, 15, 17 | **17** |
-| **T4** | [`spectrum`](docs/superpowers/specs/2026-08-10-spectrum-design.md) — new repo | designed, forks open | 7 | **18** |
-| **T5** | [`parallax-proxy`](docs/superpowers/specs/2026-08-10-parallax-freshness-design.md) — extension | designed, forks open | *checks* 2, 3, 19, 20 | 18 |
+| **T3** | [`transit guard`](docs/superpowers/specs/2026-08-10-transit-guard-claims-design.md) — extension | designed, forks resolved | 13, 14, 15, 17 | **17** |
+| **T4** | [`spectrum`](docs/superpowers/specs/2026-08-10-spectrum-design.md) — new repo | designed, steps 1–4 planned | 7 | **18** |
+| **T5** | [`parallax-proxy`](docs/superpowers/specs/2026-08-10-parallax-freshness-design.md) — extension | designed, forks resolved | *checks* 2, 3, 19, 20 | 18 |
 | **T6** | delegation chain — unnamed | **not designed** | 5, 6 | **20** |
 
 ### T1 · `poc-audit` — the map it drew
@@ -240,7 +240,7 @@ unlinkability, which is why it is a new repo rather than a fourth binary somewhe
 ### T3 · `transit guard` — write down what it already knows
 
 An extension, not a repository — [designed](docs/superpowers/specs/2026-08-10-transit-guard-claims-design.md),
-forks open. The guard sits in the request path, canonicalizes, decides, and discards all
+all eight forks resolved. The guard sits in the request path, canonicalizes, decides, and discards all
 of it. Teaching it to emit a claim for `ephemeris` to chain closes **four** fields.
 
 It was four rather than five, and the roadmap said five, because
@@ -293,7 +293,7 @@ should expect that field graded down, not up.
 ### T5 · Freshness, the challenge, and re-checking the claim
 
 An extension to `parallax` — [designed](docs/superpowers/specs/2026-08-10-parallax-freshness-design.md),
-forks open. It emits no new field. It makes four existing ones mean something.
+all ten forks resolved. It emits no new field. It makes four existing ones mean something.
 
 Two are the replay pair: a staleness bound on `iat`, and actually issuing the `nonce`
 that C7.1.4 says defeats replay. A record with an unchecked `iat` and a `nonce` nobody
@@ -301,6 +301,23 @@ chose is a record that replays. Its research is
 [P03](papers/P03-attestation-freshness.md), and the measurement that motivated P03 — a
 hardware quote costs 39.5 ms — is the reason a staleness bound is a policy decision
 rather than a constant.
+
+Resolving its forks added a **prerequisite correction to `parallax` itself**, which lands
+before the offline path. `parallax-attest` extends RTMR3 with the workload digest and
+nothing reads it — `derive.rs` says so in a comment — so the shipped pair attests the
+workload and the shipped gate checks only MRTD. Building the offline re-verifier first
+would enshrine that defect in a second place.
+
+It also decided that `measurement` **is the MRTD**, `sha-384` and 96 hex. That makes the
+standard's own `hardware-attested.json` invalid, since its value is 32 bytes and a TDX
+MRTD is 48 — filed upstream as a finding rather than treated as a reason to weaken the
+check. A second defect rides with it: the schema's `digest` pattern does not tie the tag
+to the length, so `sha-384:` followed by 64 hex validates.
+
+And `poc-audit` will grow two verdicts where it has one: `ESTABLISHED (compared)` and
+`ESTABLISHED (re-verified)`. Comparing two strings and re-verifying a quote chain are
+different acts, and collapsing them is the conflation that produced the † correction
+above.
 
 Designing it produced the fact that makes freshness hard: **a TDX quote carries no
 timestamp.** `VerificationOutcome`'s date fields date the collateral, not the quote. And
@@ -369,7 +386,9 @@ earned, which is [P01](papers/P01-trust-calculus.md)'s documented finding.
 
 **Nothing here is described as existing until it does.** Seven tools have shipped and are
 linked above. `ephemeris` is designed with Phase 1 planned; `transit guard`'s extension,
-`spectrum` and T5 are designed with forks open; T6 is not designed and `path_summary_hash`
+`spectrum` is designed with steps 1–4 planned and its eight forks deliberately open;
+`transit guard`'s extension and T5 are designed with every fork resolved; T6 is not
+designed and `path_summary_hash`
 has no step at all.
 
 **Three rows in this table were wrong, and each was corrected by doing the work rather

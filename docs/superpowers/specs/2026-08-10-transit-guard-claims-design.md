@@ -1,8 +1,26 @@
 # Design — `transit guard` claims, the enforcement point that writes down what it decided
 
-**Date:** 2026-08-10 · **Status:** draft, forks unresolved ·
+**Date:** 2026-08-10 · **Status:** approved, forks resolved 2026-08-10, ready for implementation planning ·
 **Repo:** extension to [`transit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/transit),
 writing to [`ephemeris`](2026-08-10-ephemeris-design.md) over a Unix domain socket
+
+---
+
+## Forks, resolved 2026-08-10
+
+All eight are closed. Each `OPEN FORK` block below is retained with its reasoning
+intact, because the argument is why the answer is what it is.
+
+| fork | resolution |
+| --- | --- |
+| **1 — what `canonical_snapshot_hash` digests** | **Both.** The constructed snapshot in the field; `snapshot_body_sha256` alongside as an additional claim. `X-Transit-Digest` stays byte-identical, because it is an established contract and P02's result rests on it. The cost — two digests a careless verifier may compare to each other — is documented, not prevented. |
+| **2 — scope of `target_resource`** | Upstream-qualified path, query excluded. The query is a selector, not a resource, and it is already committed inside the snapshot. |
+| **3 — route overrides** | Normalize to the effective value before hashing. Two operators expressing one policy must get one hash; the alternative reproduces `parallax`'s defect. |
+| **4 — `path_summary_hash`** | **Ship unfilled.** The guard is not a path-aware authorization point and cannot claim C4.1.7. T3 closes four fields, not five; `TOOLING.md` already carries the correction. Option C is P04's research and needs its own spec. |
+| **5 — `ALLOW` vs `MODIFY`** | The rule: `ALLOW` only when the difference is RFC 8785 canonicalization of a body that parsed to the same value, plus RFC 9110 §7.6.1 hop-by-hop removal. Everything else is `MODIFY`. |
+| **6 — two records or three** | **Three**, with the middle one meaning *dispatched* and labelled `observed = "request_dispatched"` so nothing reads it as an effect claim. The honest gap — nobody witnessed the effect — stays visible in the label rather than in a footnote. |
+| **7 — does `DENY` block on durability** | **Block.** A lost `ALLOW` record is an unevidenced effect; a lost `DENY` record is an unevidenced probe, and the probe is the reconnaissance phase of the attack this component exists to stop. Mitigate the flood at admission, not at the record. |
+| **8 — source of `agent_id` / `initiating_user`** | Static config now; RA-TLS verified peer identity as the real answer. **Never a request header** — the agent asserting its own identity to the component whose job is not to trust it produces a record whose identity fields mean nothing. |
 
 ---
 
@@ -142,7 +160,7 @@ Three properties this shape buys, each of which the body-only digest does not ha
 
 `canonical_snapshot_hash = "sha-256:" ‖ jcs::digest(snapshot)`.
 
-> **OPEN FORK: what `canonical_snapshot_hash` digests.**
+> **RESOLVED — FORK: what `canonical_snapshot_hash` digests.**
 >
 > | option | for | against |
 > | --- | --- | --- |
@@ -163,7 +181,7 @@ Three properties this shape buys, each of which the body-only digest does not ha
 > auditor's `DIVERGES` finding is comparing the wrong things, and the seam test in
 > [Testing](#testing) is what catches it.
 
-> **OPEN FORK: the scope of `target_resource`.**
+> **RESOLVED — FORK: the scope of `target_resource`.**
 >
 > The schema says only "the resource the action addresses". Three readings:
 > the normalized path (`/v1/transfer`); the upstream-qualified path
@@ -249,7 +267,7 @@ behaviour makes that test fail, and the only way to make it pass is to regenerat
 fixture, which forces the bump. The test is the mechanism; the integer is just where the
 mechanism writes its answer.
 
-> **OPEN FORK: normalize route overrides to their effective value, or hash them as
+> **RESOLVED — FORK: normalize route overrides to their effective value, or hash them as
 > written.**
 >
 > `RouteRule::require_idempotency_key` is `Option<bool>`, resolved against the global via
@@ -296,7 +314,7 @@ cleared by a `SIGTERM` is not bounded, it is decorative.
 
 So the field cannot be filled honestly by writing a fold and calling it done.
 
-> **OPEN FORK: `path_summary_hash`. This is the fork that decides whether T3 closes five
+> **RESOLVED — FORK: `path_summary_hash`. This is the fork that decides whether T3 closes five
 > fields or four.**
 >
 > | option | what ships | what it costs |
@@ -336,7 +354,7 @@ rather than the wire body, strips hop-by-hop headers, rewrites `Content-Type` to
 `application/json`, adds its own digest header, and forwards `normalize_target`'s decoded
 path rather than the target as sent.
 
-> **OPEN FORK: when is a guard forward `ALLOW` and when is it `MODIFY`?**
+> **RESOLVED — FORK: when is a guard forward `ALLOW` and when is it `MODIFY`?**
 >
 > - **Everything is `MODIFY`.** Defensible on the plain text, and useless: a verdict that
 >   takes one value carries no information, and `ALLOW` would never appear in any record
@@ -388,7 +406,7 @@ the before and the after. There is nothing between them.
 the upstream performed an effect is not observable from this side of the socket, and a
 record claiming "effect performed" from a proxy is a claim the proxy has no basis for.
 
-> **OPEN FORK: emit two records, or three.**
+> **RESOLVED — FORK: emit two records, or three.**
 >
 > - **Two, and declare C7.1.2 unmet.** The guard emits before and after, and its output
 >   and README say plainly that the during record is not produced because this component
@@ -457,7 +475,7 @@ per-request and not overridable from the environment** — the same rule
 C7.1.3 gates the *forward*. A rejection has no forward, so nothing about the response to a
 refused request is a precondition of anything.
 
-> **OPEN FORK: does the 4xx response block on the DENY record's durability?**
+> **RESOLVED — FORK: does the 4xx response block on the DENY record's durability?**
 >
 > - **Block.** C7.6.3 says in-scope actions are refused until the pipeline recovers, and a
 >   refusal that is not recorded is an invisible refusal — an attacker probing the guard's
@@ -539,7 +557,7 @@ them caller-supplied, and the guard is the caller. Nothing in `hostile::Request`
 either. This is not a T3 field by the roadmap's count — both are T6 — but the claim cannot
 be assembled without them.
 
-> **OPEN FORK: the source of `agent_id` and `initiating_user`.**
+> **RESOLVED — FORK: the source of `agent_id` and `initiating_user`.**
 >
 > - **Static config.** One guard, one agent. Simple, honest, and wrong for any fleet: a
 >   shared guard in front of a tool serves many agents.
