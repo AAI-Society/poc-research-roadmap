@@ -288,8 +288,16 @@ pub const DIGEST_LEN: usize = 32;
 
 /// Named in error messages so an operator meeting a peer with a different
 /// convention sees a layout mismatch rather than an accusation.
-pub const LAYOUT: &str = "the Gramine/Intel layout, SHA-256(SPKI) in \
-                          report_data bytes 0..32, remainder zero";
+//
+// AMENDED (Task 2's review, coordinator). This block previously reworded the
+// string to "...bytes 0..32, remainder zero". That is operator-facing text --
+// `BindingError::TrailingBytes` and `Mismatch` print it -- so rewording it
+// inside a task this plan scopes as "a pure move, no behaviour changes" was a
+// behaviour change the plan contradicted itself about. No test pinned the old
+// wording, so nothing caught it but review. The pre-existing wording governs;
+// copy it exactly.
+pub const LAYOUT: &str = "the Gramine/Intel layout, SHA-256(SPKI) in report_data \
+                      bytes 0..32 with the remainder zero";
 
 /// What `report_data` must contain for a certificate whose SubjectPublicKeyInfo
 /// is `spki_der`.
