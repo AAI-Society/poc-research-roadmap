@@ -15,6 +15,12 @@ something worth building on: a specific question, the prior art it must engage, 
 that would settle it, and the change it would make to the standard if the answer came out either
 way.
 
+> **Looking for what to deploy rather than what to research?**
+> [**TOOLING.md**](TOOLING.md) is the companion roadmap. It maps every required field of
+> the Proof-of-Control evidence record to the tool that produces it, the tool that checks
+> it, and the paper that blocks it — and reports that no tool in this programme emits a
+> record at all yet.
+
 ---
 
 ## The short version
@@ -120,9 +126,18 @@ Start a deep-research pass from sections 3 and 4. Section 5 is the part that nee
 
 ## Status
 
-This is a planning repository. No paper here has been written. Priorities reflect one
-assessment and should be argued with — see [PRIORITIZATION.md](PRIORITIZATION.md) for the
-scoring, including where it is most likely to be wrong.
+**P01, P02 and P05 are done.** Each has a drafted paper and a shipped Rust tool —
+`parallax`, `transit` and `occultation` — and [what building `parallax` established, and
+what P01 must change](docs/parallax-outcomes.md) records the amendments the implementation
+forced. Three further tools followed that this roadmap did not anticipate:
+`parallax-proxy`, `parallax-attest` and `occultation-gateway`.
+
+The nine remaining papers are unwritten. Priorities reflect one assessment and should be
+argued with — see [PRIORITIZATION.md](PRIORITIZATION.md) for the scoring, including where
+it is most likely to be wrong.
+
+Those six shipped tools do not yet let anyone comply with the standard, and
+[TOOLING.md](TOOLING.md) is the roadmap for what would.
 
 ---
 
