@@ -186,10 +186,10 @@ against.
 | | Tool | Status | Closes | Fields in a record, after |
 | :--: | --- | --- | --- | :--: |
 | **T1** | [`poc-audit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/poc-audit) | **shipped** | nothing | 0 |
-| **T2** | [`ephemeris`](docs/superpowers/specs/2026-08-10-ephemeris-design.md) — new repo | designed, phase 1 planned | 1–4, 8–12, 18, 19–21 | **13** |
-| **T3** | [`transit guard`](docs/superpowers/specs/2026-08-10-transit-guard-claims-design.md) — extension | designed, forks resolved | 13, 14, 15, 17 | **17** |
-| **T4** | [`spectrum`](docs/superpowers/specs/2026-08-10-spectrum-design.md) — new repo | designed, steps 1–4 planned | 7 | **18** |
-| **T5** | [`parallax-proxy`](docs/superpowers/specs/2026-08-10-parallax-freshness-design.md) — extension | designed, forks resolved | *checks* 2, 3, 19, 20 | 18 |
+| **T2** | [`ephemeris`](docs/superpowers/plans/2026-08-10-ephemeris.md) — new repo | **phase 1 planned** | 1–4, 8–12, 18, 19–21 | **13** |
+| **T3** | [`transit guard`](docs/superpowers/plans/2026-08-10-transit-guard-claims.md) — extension | **planned** | 13, 14, 15, 17 | **17** |
+| **T4** | [`spectrum`](docs/superpowers/plans/2026-08-10-spectrum.md) — new repo | **steps 1–4 planned** | 7 | **18** |
+| **T5** | [`parallax`](docs/superpowers/plans/2026-08-10-parallax-freshness.md) — extension | **planned** | *checks* 2, 3, 19, 20 | 18 |
 | **T6** | delegation chain — unnamed | **not designed** | 5, 6 | **20** |
 
 ### T1 · `poc-audit` — the map it drew
@@ -303,10 +303,16 @@ hardware quote costs 39.5 ms — is the reason a staleness bound is a policy dec
 rather than a constant.
 
 Resolving its forks added a **prerequisite correction to `parallax` itself**, which lands
-before the offline path. `parallax-attest` extends RTMR3 with the workload digest and
-nothing reads it — `derive.rs` says so in a comment — so the shipped pair attests the
-workload and the shipped gate checks only MRTD. Building the offline re-verifier first
-would enshrine that defect in a second place.
+before the offline path — though narrower than first written, and the narrowing is worth
+recording. The design's evidence was a comment in `derive.rs` saying nothing reads
+`rt_mrs`. That was true when the design was written and is **false now**: commit
+`f907736` shipped the RTMR3 comparison, its config surface, and a hardware cross-check.
+The comment is still in the tree, contradicted by code two hundred lines below it.
+
+What remains is real and still first in the plan: `decide`'s require-gate and its
+`warnings` read the MRTD axis only, so the gate can admit a connection whose workload
+identity was never compared and say nothing about it. Building the offline re-verifier
+first would reproduce a gate that checks less than its own configuration describes.
 
 It also decided that `measurement` **is the MRTD**, `sha-384` and 96 hex. That makes the
 standard's own `hardware-attested.json` invalid, since its value is 32 bytes and a TDX
