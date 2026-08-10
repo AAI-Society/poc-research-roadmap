@@ -16,7 +16,7 @@ is where they meet.
 
 The record is what compliance means. `poc-evidence.schema.json` requires twenty
 fields, and a twenty-first — the signature — that the schema marks optional and
-without which nothing is verifiable at all. Six tools have shipped. Between them
+without which nothing is verifiable at all. Seven tools have shipped. Between them
 they compute the value of five of those twenty-one fields: `parallax-attest` mints
 a real TDX measurement, `transit guard` computes a canonical digest, a normalized
 target and a decision for every request it forwards. **No tool assembles those into
@@ -25,6 +25,13 @@ thrown away.**
 
 Ten of the twenty-one fields have nothing behind them at all — no tool computes
 them, no tool checks them, and no design exists for the tool that would.
+
+Since [T1](#t1--poc-audit--the-map-it-drew) shipped, this is no longer an assertion.
+Run against the standard's own strongest positive vector, with every optional input
+supplied, `poc-audit` establishes **two rows out of twenty-two** — and both are
+identity fields, established in the sense that they are *linkable*. The finding is a
+privacy cost, not a security property. [What it reports](#what-poc-audit-actually-reports)
+is below the table.
 
 That is the gap this document exists to close, and it is worth being blunt about
 why it opened. Every tool in the programme was built to answer a research question,
@@ -46,8 +53,8 @@ it — not that a schema validator confirmed its type.
 | 2 | `iat` | — | *structural only* | T2 · T5 | [P03](papers/P03-attestation-freshness.md) |
 | 3 | `nonce` | — | — | T2 · T5 | — |
 | 4 | `eat_profile` | — | *structural only* | T2 | — |
-| 5 | `agent_id` | — | `occultation-gateway` | T6 | [P05](papers/P05-unlinkable-identity.md) ✓ · [P06](papers/P06-delegation-attenuation.md) |
-| 6 | `initiating_user` | — | `occultation-gateway` | T6 | [P06](papers/P06-delegation-attenuation.md) |
+| 5 | `agent_id` | — | `poc-audit` → `occultation` | T6 | [P05](papers/P05-unlinkable-identity.md) ✓ · [P06](papers/P06-delegation-attenuation.md) |
+| 6 | `initiating_user` | — | `poc-audit` → `occultation` | T6 | [P06](papers/P06-delegation-attenuation.md) |
 | 7 | `agbom_digest` | — | — | T4 | [P10](papers/P10-agbom.md) |
 | 8 | `interception_point` | — | — | T2 | — |
 | 9 | `step_index` | — | — | T2 | [P08](papers/P08-log-concurrency.md) |
@@ -56,18 +63,24 @@ it — not that a schema validator confirmed its type.
 | 12 | `tree_size` | — | — | T2 | [P08](papers/P08-log-concurrency.md) · [P07](papers/P07-evidence-continuity.md) |
 | 13 | `policy_bundle_hash` | — | — | T3 | — |
 | 14 | `target_resource` | `transit guard` | — | T3 | — |
-| 15 | `canonical_snapshot_hash` | `transit guard` | `transit differential` | T3 | [P02](papers/P02-effect-binding.md) ✓ |
+| 15 | `canonical_snapshot_hash` | `transit guard` | `poc-audit` → `transit` | T3 | [P02](papers/P02-effect-binding.md) ✓ |
 | 16 | `path_summary_hash` | — | — | T3 | [P04](papers/P04-bounded-summaries.md) |
 | 17 | `verdict` | `transit guard` | — | T3 | [P02](papers/P02-effect-binding.md) ✓ |
 | 18 | `alg` | — | *structural only* | T2 | — |
-| 19 | `platform` | `parallax-attest` | `parallax-proxy` | T2 † | [P01](papers/P01-trust-calculus.md) ✓ |
-| 20 | `measurement` | `parallax-attest` | `parallax-proxy` | T2 † | [P01](papers/P01-trust-calculus.md) ✓ |
+| 19 | `platform` | `parallax-attest` | *live only* † | T2 · T5 | [P01](papers/P01-trust-calculus.md) ✓ |
+| 20 | `measurement` | `parallax-attest` | *live only* † | T2 · T5 | [P01](papers/P01-trust-calculus.md) ✓ |
 | 21 | `signature` | — | *structural only* | T2 | — |
 
 ✓ marks research already done. *Structural only* means the standard's own
 `schema/validate.py` confirms the field's shape and nothing confirms its meaning.
-† marks the two rows with no tooling gap left: the value is produced and independently
-verified today, and T2 appears only because nothing yet carries it into a record.
+
+† **`parallax-proxy` verifies a live quote inside a TLS handshake. Nothing verifies
+the `measurement` field of a record against reference values.** These are different
+acts and the roadmap originally conflated them. A record is a claim that a
+verification happened; re-checking that claim offline is unbuilt work, and it is why
+`poc-audit` returns `ASSERTED` on both rows even when handed the deployment that
+names the reference values. This gap was found by running the tool, not by writing
+the table.
 
 Three things this table says that are worth reading twice.
 
@@ -83,11 +96,50 @@ gaps. They are one missing component, described five times.
 sits in the request path, already canonicalizes the body, already decides. Row 14, 15
 and 17 are a serialization problem, not a research problem.
 
+### What `poc-audit` actually reports
+
+The table above is one person's reading of the schema. This is a tool's, on
+`schema/vectors/positive/hardware-attested.json` — the standard's own strongest
+positive vector — with `--deployment` and `--fleet` supplied:
+
+| verdict | rows | which |
+| --- | :--: | --- |
+| `ESTABLISHED` | 2 | `agent_id`, `initiating_user` |
+| `ASSERTED` | 2 | `platform`, `measurement` |
+| `UNCHECKED` | 18 | everything else |
+
+`DIVERGES` and `CANNOT HOLD` are reachable but need an input this vector does not
+carry: a payload two decoders disagree about drives `canonical_snapshot_hash` to
+`DIVERGES` and exits 1, and `--profile unlinkable` drives both identity rows to
+`CANNOT HOLD` and exits 1.
+
+Three things to take from it.
+
+**The only two established rows are the identity fields, and what they establish is a
+cost.** `agent_id` passes C5.1.1 *because* it is a persistent identifier, and the tool
+says so in the same breath as saying that every action carrying it is linkable to one
+subject. Against `fleet-drifted.toml`: 120 hosts, smallest anonymity set 1, effective
+set 52.7, one singleton. On the standard's best vector, the strongest thing a tool can
+say is a privacy finding.
+
+**`poc-audit` reports twenty-two rows to this table's twenty-one.** It adds
+`poc_claims` and `submods` as container rows and omits the optional `signature`. Both
+counts are right about different things; the tool's is the one wired to a test that
+reads the schema's `required` array, so when the standard adds a field the build
+breaks rather than the report narrowing.
+
+**Eighteen `UNCHECKED` is the honest state of compliance tooling**, and the reasons
+split three ways: out of scope by design (`iss`, `iat`, `nonce`), already covered by
+`validate.py` (`eat_profile`, `interception_point`, `verdict`, `alg`, `tree_size`), and
+*nothing exists* (`chain_head`, `merkle_root`, `step_index`, `agbom_digest`,
+`policy_bundle_hash`, `path_summary_hash`). Only the third group is this roadmap's
+problem, and it is exactly T2, T3 and T4.
+
 ---
 
 ## What you can run today
 
-Six tools have shipped. This is what each actually gives an operator, stated as
+Seven tools have shipped. This is what each actually gives an operator, stated as
 narrowly as it deserves.
 
 | Tool | What it gives you | What it does not |
@@ -98,6 +150,7 @@ narrowly as it deserves.
 | [`transit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/transit) | Whether an endpoint satisfies the four effect-binding conditions, and a reproduction of what goes wrong when it does not — offline, no credentials | Classification is advisory. `probe` against third-party endpoints is gated and stays gated |
 | `transit guard` *(subcommand)* | An enforcing reverse proxy that refuses requests failing those conditions, with a generated config from `classify --emit-guard-config` | Emits no evidence. It decides and forgets |
 | [`occultation`](https://github.com/Task-force-for-AI-agents-in-Healthcare/occultation) + `occultation-gateway` | What unlinkability costs at agent action rates, and a **fail-open** meter that tells a relying party what each live request gave away | Provides no unlinkability. Two of five priced layers are modelled stubs with no security. The gateway never rejects |
+| [`poc-audit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/poc-audit) | Reads an evidence record and reports, per field, what actually backs the claim — the only tool that answers "where do I stand" | Fills no field, signs nothing, prints no aggregate verdict, and on today's records reports mostly `UNCHECKED` |
 
 **The pairing worth knowing about:** `parallax-attest` on the workload and
 `parallax-proxy` in front of the client is a deployable attestation path today, with
@@ -113,26 +166,31 @@ carries after it, because a roadmap whose steps do not move a number is a wish l
 
 | | Tool | Status | Closes | Fields in a record, after |
 | :--: | --- | --- | --- | :--: |
-| **T1** | [`poc-audit`](docs/superpowers/specs/2026-08-09-poc-audit-design.md) | designed, **no plan** | nothing | 0 |
+| **T1** | [`poc-audit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/poc-audit) | **shipped** | nothing | 0 |
 | **T2** | `ephemeris` — new repo | **not designed** | 1–4, 8–12, 18, 19–21 | **13** |
 | **T3** | `transit guard` — extension | guard shipped | 13–17 | **18** |
 | **T4** | `spectrum` — new repo | **not designed** | 7 | **19** |
 | **T5** | `parallax-proxy` — extension | shipped | *checks* 2, 3 | 19 |
 | **T6** | delegation chain — unnamed | **not designed** | 5, 6 | **21** |
 
-### T1 · `poc-audit` — closes nothing, and goes first
+### T1 · `poc-audit` — the map it drew
 
-It is the only tool here that fills no field. It reads an evidence record and reports,
-per field, what actually backs the claim — `ESTABLISHED`, `ASSERTED`, `DIVERGES`,
-`CANNOT HOLD`, or `UNCHECKED`. Its whole output today would be `UNCHECKED`.
+**Shipped.** It is the only tool here that fills no field. It reads an evidence record
+and reports, per field, what actually backs the claim — `ESTABLISHED`, `ASSERTED`,
+`DIVERGES`, `CANNOT HOLD`, or `UNCHECKED` — against the
+[design](docs/superpowers/specs/2026-08-09-poc-audit-design.md) written the day before
+it was built.
 
-It goes first for two reasons. It is already designed and would otherwise rot. And
-every coverage claim in this document is currently an assertion by the person who
-wrote it; `poc-audit` is the thing that makes them falsifiable. A roadmap that cannot
-be checked against a tool is the failure mode this programme was founded to attack.
+It went first because every coverage claim in this document was otherwise an assertion
+by the person who wrote it, and a roadmap that cannot be checked against a tool is the
+failure mode this programme was founded to attack. That earned its cost immediately:
+running it **corrected a row in the table above**. `platform` and `measurement` were
+marked as having no tooling gap left, on the grounds that `parallax-proxy` verifies
+them. It verifies a live quote in a handshake. Nothing re-checks a record's claim that
+this happened, so both rows come back `ASSERTED`, and closing them moved into T5.
 
-It needs an implementation plan. That is the single most immediately actionable item
-in this document.
+What it does not do is fill a field, and no amount of auditing will produce a record to
+audit. That is T2.
 
 ### T2 · `ephemeris` — the missing producer
 
@@ -186,16 +244,24 @@ whose composition changes at runtime. A tool built before that is answered would
 the wrong thing convincingly. It is placed after T3 for that reason and not because the
 engineering is hard.
 
-### T5 · Freshness and the challenge
+### T5 · Freshness, the challenge, and re-checking the claim
 
-An extension to `parallax-proxy`. It emits no new field. It makes two existing ones
-mean something: a staleness bound on `iat`, and actually issuing the `nonce` that C7.1.4
-says defeats replay. A record with an unchecked `iat` and a `nonce` nobody chose is a
-record that replays.
+An extension to `parallax-proxy`. It emits no new field. It makes four existing ones
+mean something.
 
-Its research is [P03](papers/P03-attestation-freshness.md), and the measurement that
-motivated P03 — a hardware quote costs 39.5 ms — is the reason a staleness bound is a
-policy decision rather than a constant.
+Two are the replay pair: a staleness bound on `iat`, and actually issuing the `nonce`
+that C7.1.4 says defeats replay. A record with an unchecked `iat` and a `nonce` nobody
+chose is a record that replays. Its research is
+[P03](papers/P03-attestation-freshness.md), and the measurement that motivated P03 — a
+hardware quote costs 39.5 ms — is the reason a staleness bound is a policy decision
+rather than a constant.
+
+The other two arrived from running T1. `platform` and `measurement` are `ASSERTED`
+because verifying a live quote and re-checking a record's claim that a quote was
+verified are different acts, and only the first is built. Closing them means comparing
+a record's `measurement` against the reference values a `parallax` deployment names,
+offline, with no handshake to observe. That is the same comparison `parallax-proxy`
+already performs in step 5 of its pipeline, reached from a file instead of a socket.
 
 ### T6 · The delegation chain
 
@@ -248,9 +314,9 @@ reason [`poc-audit`](docs/superpowers/specs/2026-08-09-poc-audit-design.md) prin
 overall result: a single summary word is what lets a deployment claim a tier it has not
 earned, which is [P01](papers/P01-trust-calculus.md)'s documented finding.
 
-**Nothing here is described as existing until it does.** `poc-audit` is designed and
-unbuilt. `ephemeris`, `spectrum` and T6 are not designed. Six tools have shipped and are
-linked above.
+**Nothing here is described as existing until it does.** `ephemeris`, `spectrum` and T6
+are not designed. Seven tools have shipped and are linked above, and the one row in the
+coverage table that turned out to be wrong was found by running one of them.
 
 ---
 

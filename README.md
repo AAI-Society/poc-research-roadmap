@@ -129,15 +129,18 @@ Start a deep-research pass from sections 3 and 4. Section 5 is the part that nee
 **P01, P02 and P05 are done.** Each has a drafted paper and a shipped Rust tool —
 `parallax`, `transit` and `occultation` — and [what building `parallax` established, and
 what P01 must change](docs/parallax-outcomes.md) records the amendments the implementation
-forced. Three further tools followed that this roadmap did not anticipate:
-`parallax-proxy`, `parallax-attest` and `occultation-gateway`.
+forced. Four further tools followed that this roadmap did not anticipate:
+`parallax-proxy`, `parallax-attest`, `occultation-gateway`, and
+[`poc-audit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/poc-audit),
+which reads an evidence record and reports what actually backs each claim.
 
 The nine remaining papers are unwritten. Priorities reflect one assessment and should be
 argued with — see [PRIORITIZATION.md](PRIORITIZATION.md) for the scoring, including where
 it is most likely to be wrong.
 
-Those six shipped tools do not yet let anyone comply with the standard, and
-[TOOLING.md](TOOLING.md) is the roadmap for what would.
+Those seven shipped tools do not yet let anyone comply with the standard —
+`poc-audit` establishes two rows out of twenty-two on the standard's own strongest
+positive vector — and [TOOLING.md](TOOLING.md) is the roadmap for what would.
 
 ---
 
