@@ -618,6 +618,27 @@ EOF
 
 Needs Docker and a registry the operator can push to. Needs **no TDX and no GCP**: Task 1 of the predecessor plan already established on real hardware that RTMR3 is a deterministic function of the digest, across boots. The only new claim is about digests.
 
+> **AMENDMENT (coordinator, 2026-08-10, human-approved).** There is no container
+> runtime on the machine executing this plan — `docker`, `podman` and `colima` are
+> all absent — so this task cannot run its own script. The plan asserted "no TDX,
+> no GCP" and never checked the one dependency the task does have.
+>
+> **This task is now Steps 1 and 3 only: write the script, syntax-check it, commit
+> it.** Do not attempt to run it, and do not write a transcript, a `PROVENANCE.md`,
+> or the Dockerfile correction — the correction states a measured cause, and the
+> measurement does not exist yet.
+>
+> **Step 2's run, the transcript, the `PROVENANCE.md`, and the Dockerfile
+> correction all move into Task 7**, which stands up a C3 that already has Docker
+> and a registry Task 5 provisions. The cost is a few extra minutes on a VM being
+> created anyway.
+>
+> One honest consequence to carry into Task 7: the transcript will be captured on a
+> TDX host. "This proof needs no TDX" remains true of the *script* — nothing in it
+> touches a measurement register — but it is no longer something the transcript
+> itself demonstrates. Say that in the `PROVENANCE.md` rather than implying the
+> capture was taken somewhere it was not.
+
 - [ ] **Step 1: Write the script**
 
 `scripts/publish-digest-stability.sh`, in the register of `scripts/spike-rtmr.sh` — echo each command before running it, capture output verbatim, `set -euo pipefail`. It establishes two things:
@@ -678,6 +699,30 @@ EOF
 **This task spends real money.** Provisioning on `example-project` is pre-approved. `gcloud` tokens on this org expire within about an hour and cannot be renewed non-interactively: **if they fail, stop and report, putting the full inventory of created resources with their deletion commands at the top of the reply.** Do not retry in a loop.
 
 **RTMR3 is a hash chain, zero at boot, reset only by reboot.** The sidecar extends it once per boot and refuses a second time, so a failed full run costs a VM reboot. Use `parallax-attest --check` — which probes both interfaces *without* extending — to shake out configuration before spending the boot's one extension.
+
+> **AMENDMENT (coordinator, 2026-08-10, human-approved).** Task 6 could not run its
+> own proof — no container runtime exists on the machine executing this plan. Task 7
+> inherits four things from it, to be done on the C3 while it is up:
+>
+> - **Run `scripts/publish-digest-stability.sh`** (written and committed by Task 6).
+> - **Commit its verbatim output** to `tests/fixtures/publish-digest-stability/transcript.txt`.
+> - **Write that directory's `PROVENANCE.md`**, in the register of
+>   `tests/fixtures/gcp-c3-rtmr/PROVENANCE.md`, with a SHA-256 manifest of every
+>   committed file in it except `PROVENANCE.md` itself. State plainly that the
+>   capture was taken on a TDX host: the script needs no TDX, but this transcript
+>   does not demonstrate that, and the two claims must not be conflated.
+> - **Then correct `deploy/gcp/app/Dockerfile`.** It currently hedges that the cause
+>   is "most likely" tag resolution or a build timestamp and that "this repository
+>   has not isolated which." Replace that with what the run actually measured,
+>   citing the transcript — and if the diff shows something other than `created` as
+>   the differing field, **record what it shows**. The hypothesis is well-founded
+>   but it is a hypothesis. Also delete the Dockerfile's claim that the image can be
+>   rebuilt byte-for-byte; the final review of the predecessor plan flagged it as
+>   asserting the exact property this work disproved.
+>
+> Do this **before** spending the boot's one RTMR3 extension. It is pure Docker work
+> and needs no attestation, so a mistake in it costs nothing; a mistake after the
+> extension costs a reboot.
 
 - [ ] **Step 1: Publish, provision, deploy**
 
