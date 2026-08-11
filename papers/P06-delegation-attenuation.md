@@ -13,7 +13,7 @@ nobody held?
 
 ## Why it matters
 
-**For the standard.** This is [open issue 1](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md):
+**For the standard.** This is [open issue 1](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md):
 whether identity-binding belongs to Identity (C5) or Authorization (C4). The working group leans
 toward Authorization owning it with Identity as an input, but the deeper question is untouched.
 

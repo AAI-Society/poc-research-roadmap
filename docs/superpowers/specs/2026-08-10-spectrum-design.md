@@ -1,8 +1,8 @@
 # Design — `spectrum`, the composition commitment
 
 **Date:** 2026-08-10 · **Status:** draft, forks unresolved · **Repo:** new — `spectrum`,
-depending on [`transit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/transit)
-and, for its cross-check only, [`poc-audit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/poc-audit)
+depending on [`transit`](https://github.com/AAI-Society/transit)
+and, for its cross-check only, [`poc-audit`](https://github.com/AAI-Society/poc-audit)
 
 A spectrum decomposes light into its constituent components. That is what a bill of
 materials does to a system, and it is the only claim this name makes.

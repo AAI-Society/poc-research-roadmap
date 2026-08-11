@@ -4,10 +4,10 @@
 
 | Chapter | Reqs | What it covers |
 | --- | :--: | --- |
-| [C7 Evidence Generation & Properties](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x10-C07-Evidence-Generation-and-Properties.md) | 28 | Interception, the evidence properties, custody, interoperability |
-| [C8 Verifiability Tiers](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x10-C08-Verifiability-Tiers.md) | 15 | Tier placement, the binary threshold, self-enforcing execution |
-| [C9 System Surface (MAESTRO)](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x10-C09-System-Surface-MAESTRO.md) | 6 | Locating evidence on the 7-layer agent stack |
-| [C10 Conformance & Disclosure](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x10-C10-Conformance-and-Disclosure.md) | 17 | Stages, scope declaration, trust-assumption disclosure |
+| [C7 Evidence Generation & Properties](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x10-C07-Evidence-Generation-and-Properties.md) | 28 | Interception, the evidence properties, custody, interoperability |
+| [C8 Verifiability Tiers](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x10-C08-Verifiability-Tiers.md) | 15 | Tier placement, the binary threshold, self-enforcing execution |
+| [C9 System Surface (MAESTRO)](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x10-C09-System-Surface-MAESTRO.md) | 6 | Locating evidence on the 7-layer agent stack |
+| [C10 Conformance & Disclosure](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x10-C10-Conformance-and-Disclosure.md) | 17 | Stages, scope declaration, trust-assumption disclosure |
 
 ## C7 — Evidence: the deepest chapter
 

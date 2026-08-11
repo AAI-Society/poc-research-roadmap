@@ -156,13 +156,13 @@ narrowly as it deserves.
 
 | Tool | What it gives you | What it does not |
 | --- | --- | --- |
-| [`parallax`](https://github.com/Task-force-for-AI-agents-in-Healthcare/parallax) | The set of parties whose dishonesty would change your answer, from a deployment file you wrote | Nothing is verified. It computes over your description, not your deployment |
+| [`parallax`](https://github.com/AAI-Society/parallax) | The set of parties whose dishonesty would change your answer, from a deployment file you wrote | Nothing is verified. It computes over your description, not your deployment |
 | `parallax-proxy` | Verifies a real Intel TDX quote — chain, TCB, revocation, key binding — and refuses the connection when the residual trust set violates policy | Egress only. TDX only. RA-TLS only |
 | `parallax-attest` | Puts an **unmodified** application behind RA-TLS on a GCP C3 Confidential VM, extending RTMR3 with the workload digest so the quote covers your code and not just the firmware | GCP only. Emits a certificate, not an evidence record |
-| [`transit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/transit) | Whether an endpoint satisfies the four effect-binding conditions, and a reproduction of what goes wrong when it does not — offline, no credentials | Classification is advisory. `probe` against third-party endpoints is gated and stays gated |
+| [`transit`](https://github.com/AAI-Society/transit) | Whether an endpoint satisfies the four effect-binding conditions, and a reproduction of what goes wrong when it does not — offline, no credentials | Classification is advisory. `probe` against third-party endpoints is gated and stays gated |
 | `transit guard` *(subcommand)* | An enforcing reverse proxy that refuses requests failing those conditions, with a generated config from `classify --emit-guard-config` | Emits no evidence. It decides and forgets |
-| [`occultation`](https://github.com/Task-force-for-AI-agents-in-Healthcare/occultation) + `occultation-gateway` | What unlinkability costs at agent action rates, and a **fail-open** meter that tells a relying party what each live request gave away | Provides no unlinkability. Two of five priced layers are modelled stubs with no security. The gateway never rejects |
-| [`poc-audit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/poc-audit) | Reads an evidence record and reports, per field, what actually backs the claim — the only tool that answers "where do I stand" | Fills no field, signs nothing, prints no aggregate verdict, and on today's records reports mostly `UNCHECKED` |
+| [`occultation`](https://github.com/AAI-Society/occultation) + `occultation-gateway` | What unlinkability costs at agent action rates, and a **fail-open** meter that tells a relying party what each live request gave away | Provides no unlinkability. Two of five priced layers are modelled stubs with no security. The gateway never rejects |
+| [`poc-audit`](https://github.com/AAI-Society/poc-audit) | Reads an evidence record and reports, per field, what actually backs the claim — the only tool that answers "where do I stand" | Fills no field, signs nothing, prints no aggregate verdict, and on today's records reports mostly `UNCHECKED` |
 
 **The pairing worth knowing about:** `parallax-attest` on the workload and
 `parallax-proxy` in front of the client is a deployable attestation path today, with
@@ -185,7 +185,7 @@ against.
 
 | | Tool | Status | Closes | Fields in a record, after |
 | :--: | --- | --- | --- | :--: |
-| **T1** | [`poc-audit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/poc-audit) | **shipped** | nothing | 0 |
+| **T1** | [`poc-audit`](https://github.com/AAI-Society/poc-audit) | **shipped** | nothing | 0 |
 | **T2** | [`ephemeris`](docs/superpowers/plans/2026-08-10-ephemeris.md) — new repo | **phase 1 planned** | 1–4, 8–12, 18, 19–21 | **13** |
 | **T3** | [`transit guard`](docs/superpowers/plans/2026-08-10-transit-guard-claims.md) — extension | **planned** | 13, 14, 15, 17 | **17** |
 | **T4** | [`spectrum`](docs/superpowers/plans/2026-08-10-spectrum.md) — new repo | **steps 1–4 planned** | 7 | **18** |
@@ -358,7 +358,7 @@ has an answer here.
 
 **The chain links everything.** `chain_head` and `merkle_root` link every action by an
 agent to every other one, by construction. That is precisely the property
-[`occultation`](https://github.com/Task-force-for-AI-agents-in-Healthcare/occultation)
+[`occultation`](https://github.com/AAI-Society/occultation)
 exists to measure the loss of, and [P05](papers/P05-unlinkable-identity.md) is the paper
 arguing it should not be assumed. Building `ephemeris` means this programme ships the
 thing its own research argues against. `poc-audit`'s design already flags the tension;

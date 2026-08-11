@@ -1,7 +1,7 @@
 # C4 — Authorization
 
 **12 requirements** · *Authority granted, decisions within or against it, delegation validity* ·
-[Chapter](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x10-C04-Authorization.md)
+[Chapter](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x10-C04-Authorization.md)
 
 ## State of the domain
 

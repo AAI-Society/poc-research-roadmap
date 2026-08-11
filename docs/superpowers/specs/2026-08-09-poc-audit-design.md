@@ -2,9 +2,9 @@
 
 **Date:** 2026-08-09 · **Status:** approved, ready for implementation planning ·
 **Repo:** new — `poc-audit`, depending on
-[`parallax`](https://github.com/Task-force-for-AI-agents-in-Healthcare/parallax),
-[`transit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/transit) and
-[`occultation`](https://github.com/Task-force-for-AI-agents-in-Healthcare/occultation)
+[`parallax`](https://github.com/AAI-Society/parallax),
+[`transit`](https://github.com/AAI-Society/transit) and
+[`occultation`](https://github.com/AAI-Society/occultation)
 
 ---
 

@@ -1,7 +1,7 @@
 # C3 — Portability
 
 **5 requirements** · *Boundary crossings: organizational, jurisdictional, compute* ·
-[Chapter](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x10-C03-Portability.md)
+[Chapter](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x10-C03-Portability.md)
 
 ## State of the domain
 
@@ -26,7 +26,7 @@ and the gap is exactly where an operator would hide something. No construction i
 **Where continuity belongs.** The working group has not decided whether cross-domain continuity is
 a Portability requirement, a **fifth evidence property** alongside binary, contemporaneous,
 tamper-evident and transparent, or a domain of its own
-([open issue 3](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md),
+([open issue 3](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md),
 raised by Bob Blessing-Hartley and separately by Advait Patel). The structural question is
 unresolved and blocks the requirements.
 

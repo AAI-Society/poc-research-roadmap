@@ -1,7 +1,7 @@
 # Design — `parallax-attest`, an attester sidecar for GCP Confidential VMs
 
 **Date:** 2026-08-09 · **Status:** approved, ready for implementation planning ·
-**Repo:** [`parallax`](https://github.com/Task-force-for-AI-agents-in-Healthcare/parallax)
+**Repo:** [`parallax`](https://github.com/AAI-Society/parallax)
 
 ---
 

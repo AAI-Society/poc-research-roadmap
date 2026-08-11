@@ -1,7 +1,7 @@
 # C1 — Provenance
 
 **13 requirements** · *Which model ran; lineage, artifact and supply-chain origin* ·
-[Chapter](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x10-C01-Provenance.md)
+[Chapter](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x10-C01-Provenance.md)
 
 ## State of the domain
 

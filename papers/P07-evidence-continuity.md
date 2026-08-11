@@ -12,7 +12,7 @@ seam verifiable, and what does crossing a jurisdiction do to the *disclosure* th
 
 ## Why it matters
 
-**For the standard.** This is [open issue 3](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md),
+**For the standard.** This is [open issue 3](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md),
 raised by Bob Blessing-Hartley and separately by Advait Patel, and it is unresolved to the point
 that the working group has not decided *where it lives* — Portability, a fifth evidence property,
 or a domain of its own.

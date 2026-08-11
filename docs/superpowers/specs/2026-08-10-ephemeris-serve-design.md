@@ -1,7 +1,7 @@
 # Design — `ephemeris serve`, the UDS listener and its four routes
 
 **Date:** 2026-08-10 · **Status:** approved, ready for implementation planning ·
-**Repo:** existing — [`ephemeris`](https://github.com/Task-force-for-AI-agents-in-Healthcare/ephemeris)
+**Repo:** existing — [`ephemeris`](https://github.com/AAI-Society/ephemeris)
 
 **This is an addendum, not a replacement.** `2026-08-10-ephemeris-design.md` already
 specifies `serve` — one row of its architecture table, reading "the UDS listener and its

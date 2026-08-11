@@ -2,7 +2,7 @@
 
 A prioritized research agenda following from
 [**Proof-of-Control: An Open Standard for Runtime Verifiability and Cryptographic Oversight in
-Autonomous AI Execution**](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard)
+Autonomous AI Execution**](https://github.com/AAI-Society/ov-poc-standard)
 (working draft v0.1, August 2026).
 
 The standard defines 127 requirements across six verification domains and four cross-cutting
@@ -89,9 +89,9 @@ are hardest.
 
 Nothing here is invented. Each paper traces to one of:
 
-* **Open working-group issues** — [Appendix D](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md)
+* **Open working-group issues** — [Appendix D](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md)
   records 13, several contributed by working-group members.
-* **Threat-model gaps** — [Appendix C](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x92-Appendix-C_Threat-Model.md)
+* **Threat-model gaps** — [Appendix C](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x92-Appendix-C_Threat-Model.md)
   grades 32 threats; most are *Partial*.
 * **Review findings** — three independent reviews of the paper returned weak reject with
   blocking objections; two are unaddressed and become P01 and P02.
@@ -131,7 +131,7 @@ Start a deep-research pass from sections 3 and 4. Section 5 is the part that nee
 what P01 must change](docs/parallax-outcomes.md) records the amendments the implementation
 forced. Four further tools followed that this roadmap did not anticipate:
 `parallax-proxy`, `parallax-attest`, `occultation-gateway`, and
-[`poc-audit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/poc-audit),
+[`poc-audit`](https://github.com/AAI-Society/poc-audit),
 which reads an evidence record and reports what actually backs each claim.
 
 The nine remaining papers are unwritten. Priorities reflect one assessment and should be

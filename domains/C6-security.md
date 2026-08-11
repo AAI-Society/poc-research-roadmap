@@ -2,7 +2,7 @@
 
 **12 requirements** · *Execution-environment integrity; controls held; tools invoked; key
 lifecycle* ·
-[Chapter](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x10-C06-Security.md)
+[Chapter](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x10-C06-Security.md)
 
 ## State of the domain
 

@@ -1,7 +1,7 @@
 # Design — `parallax-proxy`, an attestation-gating reverse proxy
 
 **Date:** 2026-08-08 · **Status:** approved, ready for implementation planning ·
-**Repo:** [`parallax`](https://github.com/Task-force-for-AI-agents-in-Healthcare/parallax)
+**Repo:** [`parallax`](https://github.com/AAI-Society/parallax)
 
 ---
 

@@ -26,7 +26,7 @@
 - The latency budget is **15 ms**, from P05 and the desk study. It is a named constant, `cost::BUDGET`, used by every verdict.
 - Durations in TOML and on the CLI are `humantime` strings (`"15ms"`, `"10s"`) — never bare numbers.
 - Licensing: **Apache-2.0 throughout**, code and paper alike, single `LICENSE` plus `NOTICE`. Copyright "Advanced AI Society and the Proof-of-Control contributors".
-- Repo is **private** in the `Task-force-for-AI-agents-in-Healthcare` org.
+- Repo is **private** in the `AAI-Society` org.
 - Every commit message ends with `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`.
 - **`results/` is split, and this differs from `parallax`.** `results/deterministic/` holds artifacts that are byte-identical on any host (the desk-study composition, anonymity partitions, the seeded pool simulation); CI regenerates these and fails on a diff. `results/measured/` holds wall-clock timings, which differ per host; CI regenerates them and asserts only that the file's `tool_version` matches the crate version and its schema is intact. Diffing timings would fail CI on jitter; not regenerating them lets a stale figure outlive a code change. This split is the compromise, and `results/README.md` states it.
 
@@ -107,7 +107,7 @@ This task fixes the discipline the whole tool rests on: a number cannot exist wi
 - [ ] **Step 1: Create the repo and manifest**
 
 ```bash
-gh repo create Task-force-for-AI-agents-in-Healthcare/occultation --private --clone
+gh repo create AAI-Society/occultation --private --clone
 cd occultation
 cargo init --name occultation
 ```
@@ -122,7 +122,7 @@ edition = "2021"
 rust-version = "1.90"
 license = "Apache-2.0"
 description = "Measure what verifiable unlinkability costs at agent action rates"
-repository = "https://github.com/Task-force-for-AI-agents-in-Healthcare/occultation"
+repository = "https://github.com/AAI-Society/occultation"
 
 [lib]
 name = "occultation"

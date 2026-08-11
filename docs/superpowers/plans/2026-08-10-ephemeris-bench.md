@@ -557,7 +557,7 @@ A measurement with no record of the machine is not a measurement, so this lands 
 In `Cargo.toml`, add after `[dependencies]`:
 
 ```toml
-occultation = { git = "https://github.com/Task-force-for-AI-agents-in-Healthcare/occultation.git", rev = "3f50bdd", optional = true }
+occultation = { git = "https://github.com/AAI-Society/occultation.git", rev = "3f50bdd", optional = true }
 ```
 
 and add, after the `[dependencies]` block:

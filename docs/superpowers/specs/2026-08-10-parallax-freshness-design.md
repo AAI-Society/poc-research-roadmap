@@ -1,7 +1,7 @@
 # Design — T5: freshness, the challenge, and re-checking the claim
 
 **Date:** 2026-08-10 · **Status:** approved, forks resolved 2026-08-10, ready for implementation planning · **Repo:** extension to
-[`parallax`](https://github.com/Task-force-for-AI-agents-in-Healthcare/parallax) —
+[`parallax`](https://github.com/AAI-Society/parallax) —
 no new repository
 
 ---

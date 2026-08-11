@@ -1,9 +1,9 @@
 # Design — `ephemeris bench`, measuring both axes
 
 **Date:** 2026-08-10 · **Status:** approved, ready for implementation planning ·
-**Repo:** existing — [`ephemeris`](https://github.com/Task-force-for-AI-agents-in-Healthcare/ephemeris),
+**Repo:** existing — [`ephemeris`](https://github.com/AAI-Society/ephemeris),
 adding a dependency on
-[`occultation`](https://github.com/Task-force-for-AI-agents-in-Healthcare/occultation)
+[`occultation`](https://github.com/AAI-Society/occultation)
 
 **Supersedes nothing.** This is item 3 of the four listed as "Phase 2, in its own
 plan" at the end of `2026-08-10-ephemeris.md`. The other three — the UDS listener,

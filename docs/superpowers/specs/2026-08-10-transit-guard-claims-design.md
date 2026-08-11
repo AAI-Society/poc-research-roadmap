@@ -1,7 +1,7 @@
 # Design — `transit guard` claims, the enforcement point that writes down what it decided
 
 **Date:** 2026-08-10 · **Status:** approved, forks resolved 2026-08-10, ready for implementation planning ·
-**Repo:** extension to [`transit`](https://github.com/Task-force-for-AI-agents-in-Healthcare/transit),
+**Repo:** extension to [`transit`](https://github.com/AAI-Society/transit),
 writing to [`ephemeris`](2026-08-10-ephemeris-design.md) over a Unix domain socket
 
 ---

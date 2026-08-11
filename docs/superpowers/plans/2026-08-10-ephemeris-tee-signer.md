@@ -60,7 +60,7 @@ In `Cargo.toml`, change the `ed25519-dalek` line to add `pkcs8`, and add the opt
 
 ```toml
 ed25519-dalek = { version = "2", features = ["rand_core", "pkcs8"] }
-parallax = { git = "https://github.com/Task-force-for-AI-agents-in-Healthcare/parallax.git", rev = "030686d", optional = true }
+parallax = { git = "https://github.com/AAI-Society/parallax.git", rev = "030686d", optional = true }
 ```
 
 ```toml

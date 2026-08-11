@@ -1,7 +1,7 @@
 # C2 — Privacy
 
 **13 requirements** · *What data was read and written — evidenced without re-leaking it* ·
-[Chapter](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x10-C02-Privacy.md)
+[Chapter](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x10-C02-Privacy.md)
 
 ## State of the domain
 
@@ -35,7 +35,7 @@ volume, ordering, and target resources. This is the same structural problem
 solved together or not at all.
 
 **Disclosure across jurisdictions.** A proof or redaction adequate under one regime may reveal
-too much under another. Raised in [open issue 3](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md)
+too much under another. Raised in [open issue 3](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md)
 and handled in **[P07](../papers/P07-evidence-continuity.md)**.
 
 ## Why this domain matters

@@ -26,7 +26,7 @@
 - Exit codes: `0` success, `1` a verification or policy failure, `2` bad input or configuration.
 - Licensing: **Apache-2.0 throughout**, in a single `LICENSE` file. Copyright "Advanced AI Society and the Proof-of-Control contributors".
 - Upstream tools are pinned by **`rev`**, never by branch, matching `poc-audit`'s `Cargo.toml`.
-- Repo is **private** in the `Task-force-for-AI-agents-in-Healthcare` org, cloned to `/Users/jimschwoebel/Desktop/ephemeris`.
+- Repo is **private** in the `AAI-Society` org, cloned to `/Users/jimschwoebel/Desktop/ephemeris`.
 - Every test runs **offline**: no network, no credentials, no TEE.
 
 ---
@@ -78,7 +78,7 @@ edition = "2021"
 rust-version = "1.90"
 license = "Apache-2.0"
 description = "An append-only evidence log for Proof-of-Control records"
-repository = "https://github.com/Task-force-for-AI-agents-in-Healthcare/ephemeris"
+repository = "https://github.com/AAI-Society/ephemeris"
 
 [lib]
 name = "ephemeris"
@@ -99,7 +99,7 @@ sha2 = "0.10"
 hex = "0.4"
 humantime = "2"
 
-transit = { git = "https://github.com/Task-force-for-AI-agents-in-Healthcare/transit.git", rev = "3e10e13" }
+transit = { git = "https://github.com/AAI-Society/transit.git", rev = "3e10e13" }
 ```
 
 `.gitignore`:

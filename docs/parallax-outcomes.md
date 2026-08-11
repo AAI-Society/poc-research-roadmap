@@ -1,6 +1,6 @@
 # What building `parallax` established, and what P01 must change
 
-**Date:** 2026-08-08 · **Tool:** [Task-force-for-AI-agents-in-Healthcare/parallax](https://github.com/Task-force-for-AI-agents-in-Healthcare/parallax) ·
+**Date:** 2026-08-08 · **Tool:** [AAI-Society/parallax](https://github.com/AAI-Society/parallax) ·
 144 tests · 28 commits · final whole-branch review clean
 
 This records what the implementation settled, what it forced us to correct, and

@@ -1,7 +1,7 @@
 # C5 — Identity
 
 **6 requirements** · *Which agent and which principal ran* ·
-[Chapter](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x10-C05-Identity.md)
+[Chapter](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x10-C05-Identity.md)
 
 ## State of the domain
 
@@ -24,13 +24,13 @@ prescriptive because the right answer is genuinely unknown, not because there is
 
 ## What is open
 
-**Unlinkability versus accountability** ([open issue 2](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md)).
+**Unlinkability versus accountability** ([open issue 2](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md)).
 Whether the standard supports verifiable-but-unlinkable identity as a selectable option, and how
 escrow works if it does. The tension is structural rather than incidental: every other part of
 the standard pushes toward evidence that links actions together, and a hash-chained publicly
 anchored log is close to the worst case for unlinkability. → **[P05](../papers/P05-unlinkable-identity.md)**
 
-**Where identity binding lives** ([open issue 1](https://github.com/Task-force-for-AI-agents-in-Healthcare/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md)).
+**Where identity binding lives** ([open issue 1](https://github.com/AAI-Society/ov-poc-standard/blob/master/0.1/en/0x93-Appendix-D_Open-Issues.md)).
 Whether C5 or C4 owns it. The working group leans toward Authorization owning it with Identity as
 an input, which is probably right — but the ownership question is downstream of a technical one
 nobody has answered: what identity semantics does a delegation chain need?

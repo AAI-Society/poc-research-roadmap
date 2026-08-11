@@ -6,7 +6,7 @@
 
 ## Summary
 
-Three private repositories in the `Task-force-for-AI-agents-in-Healthcare` GitHub organization,
+Three private repositories in the `AAI-Society` GitHub organization,
 one per prioritized paper. Each holds a Rust tool that produces the paper's central artifact, and
 a LaTeX paper in the Advanced AI Society format used by `ov-poc-standard/paper/`.
 
