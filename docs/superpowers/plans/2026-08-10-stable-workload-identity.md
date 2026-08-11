@@ -265,9 +265,9 @@ fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
-/// The digest of the demo app image Task 6 published, from
-/// `examples/gcp-c3.toml`'s comment. Any 32-byte digest would exercise the
-/// arithmetic; this one makes a failure legible against the shipped example.
+/// An arbitrary well-formed digest. This test pins the arithmetic against the
+/// library, not any particular image, so the value carries no meaning beyond
+/// being parseable — do not describe it as a real image's digest.
 const DIGEST: &str = "sha256:0000000000000000000000000000000000000000000000000000000000000001";
 
 #[test]
@@ -298,7 +298,8 @@ fn omitting_mrtd_emits_an_empty_array_and_says_so_on_stderr() {
         .expect("the binary runs");
     let stdout = String::from_utf8(out.stdout).expect("utf-8");
     let stderr = String::from_utf8(out.stderr).expect("utf-8");
-    assert!(stdout.contains("mrtd = []"), "{stdout}");
+    // Two spaces: the emitted block aligns `mrtd` with `rtmr3`.
+    assert!(stdout.contains("mrtd  = []"), "{stdout}");
     assert!(stderr.contains("mrtd"), "stderr must say where MRTD comes from:\n{stderr}");
 }
 
@@ -369,7 +370,7 @@ And to the `match cli.cmd` at `src/bin/parallax.rs:137`:
                 &digest,
             ));
             let mrtd_line = match mrtd {
-                Some(m) => match parallax::proxy::config::parse_hex48(&m, 0) {
+                Some(m) => match parallax::proxy::config::parse_hex48(&m, 0, "mrtd") {
                     Ok(_) => format!("mrtd  = [\"{m}\"]"),
                     Err(e) => {
                         eprintln!("parallax: --mrtd {e}");
@@ -393,7 +394,7 @@ And to the `match cli.cmd` at `src/bin/parallax.rs:137`:
         }
 ```
 
-If `parallax::proxy::config` is not already a public path, expose exactly what this needs and no more; do not make the whole module public if a narrower re-export will do.
+`src/proxy/mod.rs:134` already declares `pub mod config;` and `src/lib.rs:12` declares `pub mod proxy;`, so making the function `pub` is the only visibility change needed. Its real signature is `parse_hex48(hex: &str, index: usize, field: &'static str)` — three arguments, the third naming the field for the error message.
 
 - [ ] **Step 5: Run the tests**
 
