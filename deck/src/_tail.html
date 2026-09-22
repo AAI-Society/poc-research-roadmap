@@ -1,0 +1,55 @@
+</div>
+<div class="hud" id="hud">← → to move · Home / End · F for fullscreen · ⌘P prints one slide per page</div>
+
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.s'));
+  var stage=document.getElementById('stage');
+  var i=0, hudTimer;
+  function fit(){
+    var s=Math.min(window.innerWidth/1920, window.innerHeight/1080);
+    stage.style.transform='translate(-50%,-50%) scale('+s+')';
+  }
+  function show(n){
+    n=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach(function(el,k){ el.classList.toggle('on',k===n); });
+    i=n;
+    try{ history.replaceState(null,'','#'+(n+1)); }catch(e){}
+    document.title='Proof-of-Control Research Agenda · '+(n+1)+' / '+slides.length;
+    slides.forEach(function(el,k){ var c=el.querySelector('.foot .n'); if(c) c.textContent=String(k+1).padStart(2,'0'); });
+  }
+  function hud(){
+    document.body.classList.add('showhud');
+    clearTimeout(hudTimer);
+    hudTimer=setTimeout(function(){document.body.classList.remove('showhud')},2500);
+  }
+  window.addEventListener('resize',fit);
+  window.addEventListener('keydown',function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey) return;
+    switch(e.key){
+      case 'ArrowRight': case 'ArrowDown': case ' ': case 'PageDown': show(i+1); e.preventDefault(); break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp': show(i-1); e.preventDefault(); break;
+      case 'Home': show(0); e.preventDefault(); break;
+      case 'End': show(slides.length-1); e.preventDefault(); break;
+      case 'f': case 'F':
+        if(document.fullscreenElement){ document.exitFullscreen && document.exitFullscreen(); }
+        else if(document.documentElement.requestFullscreen){ document.documentElement.requestFullscreen().catch(function(){}); }
+        break;
+      default: return;
+    }
+    hud();
+  });
+  stage.addEventListener('click',function(e){
+    if(e.target.closest('a')) return;
+    var r=stage.getBoundingClientRect();
+    show(e.clientX < r.left + r.width/2 ? i-1 : i+1);
+  });
+  window.addEventListener('mousemove',hud);
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  fit();
+  show(isNaN(h)?0:h-1);
+  hud();
+})();
+</script>
+</body>
+</html>

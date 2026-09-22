@@ -1,0 +1,334 @@
+
+<!-- 01 · Cover -->
+<section class="s center" data-label="Cover" style="padding:0 150px">
+  <svg class="lockup" style="width:400px" role="img" aria-label="Advanced AI Society"><use href="#lockup"/></svg>
+  <h1 style="font-family:var(--font-display);font-weight:500;font-size:132px;line-height:.98;letter-spacing:-.025em;margin:56px 0 0;max-width:15ch"><span class="poc">Proof-of-Control</span><br>For the people who sign off</h1>
+  <p style="font-family:var(--font-text);font-size:34px;line-height:1.4;margin:40px 0 0;color:var(--ink-2);max-width:44ch">The research agenda, told for security leaders: what an AI agent can prove about itself today, what it cannot yet, and what we are building to close the gap.</p>
+  <div style="position:absolute;bottom:96px;left:150px;right:150px;display:flex;justify-content:space-between;align-items:baseline"><p style="font-family:var(--font-sans);font-size:19px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:0">Moving trust at the speed of machines</p><p style="font-family:var(--font-sans);font-size:19px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:0">Research roadmap · September 2026</p></div>
+</section>
+
+<!-- 02 · Statement -->
+<section class="s center" data-label="Statement · trust that scales">
+  <h2 class="statement">Trust that can be checked is the only kind that scales.</h2>
+  <p class="support">Every other kind asks you to take an institution’s word for it, which is exactly what stops working when the actors are machines acting thousands of times a minute.</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 03 · What Proof-of-Control is -->
+<section class="s" data-label="What it is">
+  <p class="eyebrow">Proof-of-Control, in one breath</p>
+  <h2 class="title">An open standard for checking what an AI agent <span class="mark">actually did</span>, not what it says it did</h2>
+  <p class="lede">Every action an agent takes produces a signed receipt. Anyone with the published tools can check the receipt, so the vendor’s word is no longer the only evidence you have. The working draft is public, and it is being built in the open.</p>
+  <div class="metrics">
+    <div><div class="v">127</div><div class="l">requirements, the controls an agent deployment must meet</div></div>
+    <div><div class="v">6</div><div class="l">domains: provenance, privacy, portability, authorization, identity, security</div></div>
+    <div><div class="v">4</div><div class="l">levels of assurance, from “their word” to “anyone can check”</div></div>
+    <div><div class="v">1</div><div class="l">receipt per action, with twenty-one fields that make it checkable</div></div>
+  </div>
+  <p class="src">Stewarded by the Advanced AI Society · working draft v0.1, August 2026 · <b>github.com/AAI-Society/ov-poc-standard</b></p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 04 · Divider 01 -->
+<section class="s divider" data-label="Section 01" data-divider="17a" data-object="B11" style="padding:0">
+  <div class="obj"><div style="position:absolute;right:-10.2%;bottom:-40%;width:70.2%;height:136%;transform:rotate(-3.5deg)"><svg viewBox="0 0 74.83 81.59" preserveAspectRatio="none" fill="currentColor"><polygon points="20.23,4.73 53.9,0 74.83,26.79 41.16,31.52" fill-opacity="0.15"/><polygon points="74.83,26.79 41.16,31.52 20.93,81.59 54.6,76.86" fill-opacity="0.45"/><polygon points="41.16,31.52 20.23,4.73 0,54.8 20.93,81.59" fill-opacity="0.30"/></svg></div></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">01</p><h2>The problem</h2><p class="stand">Why “trust us” stops working with agents.</p></div>
+  <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
+</section>
+
+<!-- 05 · Three shifts -->
+<section class="s" data-label="Three shifts">
+  <p class="eyebrow">Three shifts</p>
+  <h2 class="title" style="margin-bottom:60px">Who initiates the interaction has changed twice. It is changing again.</h2>
+  <div class="cols3">
+    <div><div class="bar" style="background:var(--series-2)"></div><p class="k" style="color:var(--series-2)">01 · Until the 1990s</p><h3 style="color:var(--series-2)">Human → Human</h3><p>Trust ran on relationships, institutions, and reputation. A person stood behind every action.</p></div>
+    <div><div class="bar" style="background:var(--series-1)"></div><p class="k" style="color:var(--series-1)">02 · Last three decades</p><h3 style="color:var(--series-1)">Human → Machine</h3><p>Digital transformation and SaaS. Software waits to be told; a human initiates and can be asked what happened.</p></div>
+    <div><div class="bar accent"></div><p class="k">03 · Now</p><h3 style="font-weight:600">Machine → Machine</h3><p style="font-weight:600">Agents initiate, at machine scale, without a human in the loop. Trust has to come from evidence.</p></div>
+  </div>
+  <div style="margin-top:auto;border-top:2px solid var(--aais-black);padding-top:28px"><p style="font-family:var(--font-text);font-size:27px;line-height:1.45;margin:0;max-width:52ch;color:var(--ink-2)">Each shift moved trust further from the person who carries the accountability. This one moves it out of reach of after-the-fact review entirely.</p></div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 06 · Tier ladder -->
+<section class="s" data-label="Four levels of assurance">
+  <p class="eyebrow">Four ways to know what an AI did</p>
+  <h2 class="title" style="margin-bottom:12px">Most of today’s AI assurance sits on the bottom two rungs</h2>
+  <p class="lede" style="margin-bottom:40px">The ladder is the shared scale. Every vendor claim, every audit, and every control you buy lands somewhere on it.</p>
+  <div style="border-top:2px solid var(--aais-black)">
+    <div style="display:grid;grid-template-columns:64px 1fr 620px;align-items:baseline;gap:24px;padding:24px 0;border-bottom:1px solid var(--hair)"><span style="font-family:var(--font-sans);font-size:20px;color:var(--ink-3)">1</span><span style="font-family:var(--font-display);font-size:34px;color:var(--ink-3)">Assertion</span><span style="font-family:var(--font-sans);font-size:19px;color:var(--ink-3)">their word: a policy document, a dashboard, a promise in the contract</span></div>
+    <div style="display:grid;grid-template-columns:64px 1fr 620px;align-items:baseline;gap:24px;padding:24px 0"><span style="font-family:var(--font-sans);font-size:20px;color:var(--ink-3)">2</span><span style="font-family:var(--font-display);font-size:34px;color:var(--ink-3)">Attestation</span><span style="font-family:var(--font-sans);font-size:19px;color:var(--ink-3)">a third party vouches: an auditor, a certification, a SOC 2 report</span></div>
+    <div style="border-top:2px solid var(--aais-black);padding:16px 0 0"><p style="font-family:var(--font-sans);font-size:16px;letter-spacing:.14em;text-transform:uppercase;margin:0">Proof-of-Control begins here — the trusted party is removed</p></div>
+    <div style="display:grid;grid-template-columns:64px 1fr 620px;align-items:baseline;gap:24px;padding:24px 0;border-bottom:1px solid var(--hair)"><span style="font-family:var(--font-sans);font-size:20px">3</span><span style="font-family:var(--font-display);font-weight:600;font-size:34px">Independently verifiable</span><span style="font-family:var(--font-sans);font-size:19px">anyone can check the evidence with published tools</span></div>
+    <div style="display:grid;grid-template-columns:64px 1fr 620px;align-items:baseline;gap:24px;padding:24px 0;border-bottom:2px solid var(--aais-black)"><span style="font-family:var(--font-sans);font-size:20px">4</span><span style="font-family:var(--font-display);font-weight:600;font-size:34px">Self-enforcing</span><span style="font-family:var(--font-sans);font-size:19px">the action cannot happen unless the check passes</span></div>
+  </div>
+  <p class="src">The standard’s own wording for level 3 says “there is nobody left to trust.” Building it showed that is not quite true, and that is the first thing the research programme fixes</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 07 · Five parties -->
+<section class="s tight" data-label="Who you are still trusting">
+  <p class="eyebrow">Even hardware proof rests on somebody · P01</p>
+  <h2 class="title">“Nobody left to trust” turned out to be five parties, and four of them can fail silently</h2>
+  <p class="lede" style="margin-bottom:34px">A confidential-computing chip can prove which code ran. To believe that proof, here is who you are trusting, in plain terms, and whether you would ever find out if they let you down.</p>
+  <table class="t">
+    <colgroup><col style="width:26%"><col style="width:58%"><col style="width:16%"></colgroup>
+    <thead><tr><th>Who</th><th>What you are taking on faith</th><th>Would you find out?</th></tr></thead>
+    <tbody>
+      <tr><td class="name">The chip maker</td><td class="muted">The processor and its security firmware behave as documented</td><td class="det">Never</td></tr>
+      <tr><td class="name">Their certificate service</td><td class="muted">The revocation and version data you download to check a proof is genuine</td><td class="det" style="color:var(--ink-2);font-weight:500">Within ~12 hours</td></tr>
+      <tr><td class="name">The chip’s signing component</td><td class="muted">It measures honestly and never leaks its signing key</td><td class="det">Never</td></tr>
+      <tr><td class="name">Your cloud provider</td><td class="muted">The host does not reach into protected memory, and the firmware it reports is the firmware it runs</td><td class="det">Never</td></tr>
+      <tr><td class="name">Whoever publishes the “known good” values</td><td class="muted">The reference you compare against really belongs to the code you believe it does</td><td class="det">Never</td></tr>
+    </tbody>
+  </table>
+  <p class="src">Why this matters to you: a control you cannot name the trust behind is a control you cannot defend to a regulator · <b>parallax</b>, a shipped tool, now computes this list from a description of any deployment</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 08 · Cost of a proof -->
+<section class="s" data-label="The check costs more than the action">
+  <p class="eyebrow">Measured on Intel TDX, a confidential VM on Google Cloud · P03</p>
+  <h2 class="title">Asking the hardware for proof takes longer than the action it is proving</h2>
+  <p class="lede">So no deployment can ask per action. Proofs are taken once and reused, which means every action rests on a proof taken earlier. If the code changed in between, nothing in the receipt tells you.</p>
+  <div style="display:grid;grid-template-columns:420px 1fr;gap:0 40px;align-items:center;row-gap:34px;margin-top:10px">
+    <div style="font-family:var(--font-sans);font-size:20px;font-weight:600">Running inside the protected chip<span style="display:block;font-weight:400;color:var(--ink-3);font-size:17px;margin-top:6px">the ongoing overhead, per step</span></div>
+    <div style="display:flex;align-items:center;gap:20px"><div style="width:2px;height:44px;background:var(--aais-black)"></div><span style="font-family:var(--font-display);font-size:40px;font-weight:500;white-space:nowrap">9.45 µs</span><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">effectively free</span></div>
+    <div style="font-family:var(--font-sans);font-size:20px;font-weight:600">Time budget for one agent action<span style="display:block;font-weight:400;color:var(--ink-3);font-size:17px;margin-top:6px">everything the agent is allowed to spend</span></div>
+    <div style="display:flex;align-items:center;gap:20px"><div style="width:346px;height:44px;background:var(--aais-black)"></div><span style="font-family:var(--font-display);font-size:40px;font-weight:500;white-space:nowrap">15 ms</span></div>
+    <div style="font-family:var(--font-sans);font-size:20px;font-weight:600">One hardware proof<span style="display:block;font-weight:400;color:var(--ink-3);font-size:17px;margin-top:6px">2.6× the whole budget</span></div>
+    <div style="display:flex;align-items:center;gap:20px"><div style="width:910px;height:44px;background:var(--aais-cinnabar)"></div><span style="font-family:var(--font-display);font-size:40px;font-weight:500;white-space:nowrap">39.5 ms</span></div>
+  </div>
+  <p class="src">This measurement became a requirement: every deployment must declare how often it refreshes its proof · what nobody has yet is the <b>basis for choosing that number</b>, and that is paper P03</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 09 · Statement with object -->
+<section class="s center" data-label="Statement · the receipt" data-object="W17">
+  <div style="position:absolute;inset:0;color:var(--aais-cinnabar);pointer-events:none"><div style="position:absolute;right:-6%;top:-14%;width:47.52%;height:106%;transform:rotate(5.5deg)"><svg viewBox="0 0 202 200" preserveAspectRatio="none" fill="currentColor" style="width:100%;height:100%;display:block"><polygon points="162,10 202,200 42,70" fill-opacity="0.45"/><polygon points="162,10 42,70 0,60 120,0" fill-opacity="0.15"/><polygon points="202,200 42,70 0,60 160,190" fill-opacity="0.30"/></svg></div></div>
+  <h2 class="statement" style="position:relative;z-index:2;max-width:14ch">We built the auditors before the receipt.</h2>
+  <p class="support" style="position:relative;z-index:2;max-width:38ch">Seven tools have shipped. Five of them check claims. None of them yet produces the complete, signed receipt those checks are meant to read. Closing that gap is the centre of the roadmap.</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 10 · The receipt today -->
+<section class="s" data-label="The receipt today">
+  <p class="eyebrow">The receipt, field by field · what the shipped tools cover</p>
+  <h2 class="title">Twenty-one fields make an action checkable. Today, tools compute five of them and write down none.</h2>
+  <p class="lede">The values are calculated and discarded. Nothing assembles them, signs them, or links each receipt to the one before it. That is not a research problem; it is the next thing to build.</p>
+  <div style="display:flex;gap:2px;height:96px;margin-top:8px">
+    <div style="flex:5;background:var(--aais-black)"></div>
+    <div style="flex:6;background:var(--black-60)"></div>
+    <div style="flex:10;background:var(--black-10)"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:5fr 6fr 10fr;gap:0 40px;margin-top:22px;font-family:var(--font-sans)">
+    <div><div style="font-family:var(--font-display);font-size:64px;font-weight:500;line-height:1">5</div><div style="font-size:16px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-top:10px">Computed, then thrown away</div><div style="font-size:18px;color:var(--ink-3);margin-top:8px;line-height:1.35">what was asked for, the decision, and the hardware’s proof of what ran</div></div>
+    <div><div style="font-family:var(--font-display);font-size:64px;font-weight:500;line-height:1">6</div><div style="font-size:16px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-top:10px">Checked in part</div><div style="font-size:18px;color:var(--ink-3);margin-top:8px;line-height:1.35">the shape is validated, or a tool can say something about the field, but nothing produces it</div></div>
+    <div><div style="font-family:var(--font-display);font-size:64px;font-weight:500;line-height:1">10</div><div style="font-size:16px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-top:10px">Nothing behind them yet</div><div style="font-size:18px;color:var(--ink-3);margin-top:8px;line-height:1.35;max-width:60ch">the tamper-evident chain, the parts list, the policy version, the step counter. Nine of the ten have a design; one waits on a research question</div></div>
+  </div>
+  <p class="src">Run against the standard’s own best example receipt, the audit tool can establish <b>two fields out of twenty-two</b>, and both of those are identity fields, which is a privacy cost as much as a security property</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 11 · Divider 02 -->
+<section class="s divider" data-label="Section 02" data-divider="18b·r" data-object="P7" style="padding:0">
+  <div class="obj"><div style="position:absolute;right:-12%;bottom:-46%;width:72%;height:142%;transform:rotate(-7.5deg)"><svg viewBox="0 0 234.3 167.87" preserveAspectRatio="none" fill="currentColor"><polygon points="0,100.93 181.7,45.38 202.16,112.32 20.47,167.87" fill-opacity="0.45"/><polygon points="0,100.93 181.7,45.38 213.83,0 32.14,55.55" fill-opacity="0.15"/><polygon points="181.7,45.38 202.16,112.32 234.3,66.94 213.83,0" fill-opacity="0.30"/></svg></div></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">02</p><h2>The plan</h2><p class="stand">Twelve questions, each with something to build.</p></div>
+  <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
+</section>
+
+<!-- 12 · Twelve questions -->
+<section class="s tight" data-label="Twelve questions">
+  <p class="eyebrow">The twelve papers, as the questions a security leader would ask</p>
+  <h2 class="title" style="margin-bottom:28px">Three are answered. Nine are open, and each one is scoped to be picked up.</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 72px">
+    <div style="border-top:2px solid var(--aais-black)">
+      <div style="display:grid;grid-template-columns:26px 60px 1fr;gap:0 18px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)"><i class="sq full" style="position:relative;top:2px"></i><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">P01</span><span style="font-family:var(--font-text);font-size:22px;line-height:1.35">When the hardware says it is fine, who are you still trusting?</span></div>
+      <div style="display:grid;grid-template-columns:26px 60px 1fr;gap:0 18px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)"><i class="sq full" style="position:relative;top:2px"></i><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">P02</span><span style="font-family:var(--font-text);font-size:22px;line-height:1.35">Does signing a request guarantee the effect it has on the other end?</span></div>
+      <div style="display:grid;grid-template-columns:26px 60px 1fr;gap:0 18px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)"><i class="sq accent" style="position:relative;top:2px"></i><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">P03</span><span style="font-family:var(--font-text);font-size:22px;line-height:1.35">How stale can a hardware proof be before it is worthless?</span></div>
+      <div style="display:grid;grid-template-columns:26px 60px 1fr;gap:0 18px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)"><i class="sq accent" style="position:relative;top:2px"></i><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">P04</span><span style="font-family:var(--font-text);font-size:22px;line-height:1.35">Can an attacker hide inside a summary of what an agent has done so far?</span></div>
+      <div style="display:grid;grid-template-columns:26px 60px 1fr;gap:0 18px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)"><i class="sq full" style="position:relative;top:2px"></i><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">P05</span><span style="font-family:var(--font-text);font-size:22px;line-height:1.35">Can an agent be accountable when it matters, without being tracked everywhere?</span></div>
+      <div style="display:grid;grid-template-columns:26px 60px 1fr;gap:0 18px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)"><i class="sq" style="background:rgba(10,10,10,.35);position:relative;top:2px"></i><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">P06</span><span style="font-family:var(--font-text);font-size:22px;line-height:1.35">Can a sub-agent end up with more authority than the agent that created it?</span></div>
+    </div>
+    <div style="border-top:2px solid var(--aais-black)">
+      <div style="display:grid;grid-template-columns:26px 60px 1fr;gap:0 18px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)"><i class="sq" style="background:rgba(10,10,10,.35);position:relative;top:2px"></i><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">P07</span><span style="font-family:var(--font-text);font-size:22px;line-height:1.35">Does the evidence survive a move between clouds, vendors or jurisdictions?</span></div>
+      <div style="display:grid;grid-template-columns:26px 60px 1fr;gap:0 18px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)"><i class="sq accent" style="position:relative;top:2px"></i><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">P08</span><span style="font-family:var(--font-text);font-size:22px;line-height:1.35">What does a tamper-evident log cost when hundreds of agents run at once?</span></div>
+      <div style="display:grid;grid-template-columns:26px 60px 1fr;gap:0 18px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)"><i class="sq" style="background:rgba(10,10,10,.35);position:relative;top:2px"></i><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">P09</span><span style="font-family:var(--font-text);font-size:22px;line-height:1.35">Can an agent prove it followed policy without revealing the data it touched?</span></div>
+      <div style="display:grid;grid-template-columns:26px 60px 1fr;gap:0 18px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)"><i class="sq" style="background:rgba(10,10,10,.35);position:relative;top:2px"></i><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">P10</span><span style="font-family:var(--font-text);font-size:22px;line-height:1.35">What is the bill of materials for something whose parts change while it runs?</span></div>
+      <div style="display:grid;grid-template-columns:26px 60px 1fr;gap:0 18px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)"><i class="sq" style="background:rgba(10,10,10,.35);position:relative;top:2px"></i><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">P11</span><span style="font-family:var(--font-text);font-size:22px;line-height:1.35">Who pays to check, and what makes them bother?</span></div>
+      <div style="display:grid;grid-template-columns:26px 60px 1fr;gap:0 18px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--hair)"><i class="sq" style="background:rgba(10,10,10,.35);position:relative;top:2px"></i><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">P12</span><span style="font-family:var(--font-text);font-size:22px;line-height:1.35">What do SOC 2 and ISO failures teach a new assurance regime?</span></div>
+    </div>
+  </div>
+  <div class="legend" style="margin-top:24px"><span><i class="sq full"></i>answered, with a shipped tool</span><span><i class="sq accent"></i>next: weeks of work on apparatus that exists</span><span><i class="sq" style="background:rgba(10,10,10,.35)"></i>open</span></div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 13 · Mapped to what you own -->
+<section class="s" data-label="Mapped to what you own">
+  <p class="eyebrow">The same twelve, grouped by the thing on your desk</p>
+  <h2 class="title" style="margin-bottom:56px">Four concerns a security leader already owns, and the papers that serve each</h2>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:48px">
+    <div><div style="height:20px;background:var(--aais-black)"></div><p class="k" style="font-family:var(--font-sans);font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);margin:24px 0 0">Accountability</p><h3 style="font-family:var(--font-display);font-weight:500;font-size:36px;line-height:1.1;margin:12px 0 0">Who did this, and on whose authority</h3><p style="font-family:var(--font-text);font-size:21px;line-height:1.5;margin:20px 0 0;color:var(--ink-2)">Identity that holds up when it matters and stays quiet otherwise; delegation that cannot quietly grow.</p><p style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3);margin:18px 0 0;letter-spacing:.04em">P05 · P06</p></div>
+    <div><div style="height:20px;background:var(--aais-black)"></div><p class="k" style="font-family:var(--font-sans);font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);margin:24px 0 0">Evidence</p><h3 style="font-family:var(--font-display);font-weight:500;font-size:36px;line-height:1.1;margin:12px 0 0">A record you could hand to an investigator</h3><p style="font-family:var(--font-text);font-size:21px;line-height:1.5;margin:20px 0 0;color:var(--ink-2)">Who you are really trusting, how fresh the proof is, whether it survives a cloud move, and what it costs at fleet scale.</p><p style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3);margin:18px 0 0;letter-spacing:.04em">P01 · P03 · P07 · P08</p></div>
+    <div><div style="height:20px;background:var(--aais-black)"></div><p class="k" style="font-family:var(--font-sans);font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);margin:24px 0 0">Data exposure</p><h3 style="font-family:var(--font-display);font-weight:500;font-size:36px;line-height:1.1;margin:12px 0 0">Proving compliance without leaking the data</h3><p style="font-family:var(--font-text);font-size:21px;line-height:1.5;margin:20px 0 0;color:var(--ink-2)">Whether an agent can show it followed policy while revealing nothing about the records it touched, and what it is made of at runtime.</p><p style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3);margin:18px 0 0;letter-spacing:.04em">P02 · P04 · P09 · P10</p></div>
+    <div><div style="height:20px;background:var(--aais-cinnabar)"></div><p class="k" style="font-family:var(--font-sans);font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);margin:24px 0 0">Assurance you can buy</p><h3 style="font-family:var(--font-display);font-weight:600;font-size:36px;line-height:1.1;margin:12px 0 0">Will anyone actually check, and will it mean anything</h3><p style="font-family:var(--font-text);font-size:21px;line-height:1.5;margin:20px 0 0;color:var(--aais-black)">The two papers ranked last, and possibly the ones that decide whether any of this gets adopted. This is where your experience is the research.</p><p style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3);margin:18px 0 0;letter-spacing:.04em">P11 · P12</p></div>
+  </div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 14 · What gets built -->
+<section class="s" data-label="What gets built">
+  <p class="eyebrow">What gets built, in order · how much of the receipt is filled after each step</p>
+  <h2 class="title" style="margin-bottom:12px">Six pieces of software, and the receipt goes from empty to twenty of twenty-one</h2>
+  <p class="lede" style="margin-bottom:30px">The last field waits on a research answer. The roadmap says so rather than pretending, because a receipt that claims completeness it does not have is the failure the whole standard exists to prevent.</p>
+  <div style="position:relative">
+    <div style="position:absolute;left:0;right:0;top:0;border-top:2px dashed var(--aais-black);opacity:.5"></div>
+    <div style="position:absolute;right:0;top:-30px;font-family:var(--font-sans);font-size:16px;color:var(--ink-3);letter-spacing:.04em">21 · a complete receipt</div>
+    <div class="bars" style="height:330px">
+      <div><div class="v">0</div><div class="b" style="height:2px"></div></div>
+      <div><div class="v">13</div><div class="b accent" style="height:204px"></div></div>
+      <div><div class="v">17</div><div class="b" style="height:267px"></div></div>
+      <div><div class="v">18</div><div class="b" style="height:283px"></div></div>
+      <div><div class="v">18</div><div class="b" style="height:283px"></div></div>
+      <div><div class="v">20</div><div class="b" style="height:314px"></div></div>
+    </div>
+  </div>
+  <div class="barlab">
+    <div>The auditor<span>shipped · reads a receipt and says what backs each claim</span></div>
+    <div>The recorder<span>planned · the one that writes and signs the receipt</span></div>
+    <div>The gatekeeper writes it down<span>designed · the proxy already decides; now it records</span></div>
+    <div>The parts list<span>designed · what the agent was made of at the time</span></div>
+    <div>The freshness check<span>designed · how old the hardware proof is</span></div>
+    <div>The chain of delegation<span>not yet designed · waits on P06</span></div>
+  </div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 15 · Divider 03 -->
+<section class="s divider" data-label="Section 03" data-divider="18d" data-object="B12" style="padding:0">
+  <div class="obj"><div style="position:absolute;right:-4%;bottom:-46%;width:58%;height:118%;transform:rotate(-30deg)"><svg viewBox="0 0 95.68 63.57" preserveAspectRatio="none" fill="currentColor"><polygon points="22.3,1.05 82.29,0 95.68,22.29 35.69,23.33" fill-opacity="0.15"/><polygon points="95.68,22.29 35.69,23.33 13.39,63.57 73.38,62.52" fill-opacity="0.45"/><polygon points="35.69,23.33 22.3,1.05 0,41.28 13.39,63.57" fill-opacity="0.30"/></svg></div></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">03</p><h2>Traction</h2><p class="stand">What has shipped, and what it taught us.</p></div>
+  <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
+</section>
+
+<!-- 16 · Three stats -->
+<section class="s center" data-label="Traction at a glance">
+  <p class="eyebrow">Since the working draft · August to September 2026</p>
+  <div class="trio">
+    <div><div class="v">3</div><div class="l"><b>questions answered</b>, each with a working open-source tool anyone can run</div></div>
+    <div><div class="v">7</div><div class="l"><b>tools shipped</b>, four of them the roadmap did not anticipate</div></div>
+    <div><div class="v">8</div><div class="l"><b>defects found in the standard</b> by building against it, before anyone deployed on it</div></div>
+  </div>
+  <p class="src" style="margin-top:56px">Every tool is public under <b>github.com/AAI-Society</b> · every number in this deck traces to a measurement or a document in the open repository</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 17 · What you could deploy today -->
+<section class="s" data-label="Deployable today">
+  <p class="eyebrow">The one thing an operator can deploy today</p>
+  <h2 class="title" style="margin-bottom:12px">A connection that refuses unless the hardware proves what code is on the other end. <span class="mark">Verified</span>, end to end.</h2>
+  <p class="lede" style="margin-bottom:40px">Two shipped tools, no changes to the application on either side. This is narrow, and it is real.</p>
+  <svg viewBox="0 0 1620 230" style="width:1620px;height:230px;overflow:visible;font-family:var(--font-sans)">
+    <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0A0A0A"/></marker></defs>
+    <line x1="0" y1="2" x2="1620" y2="2" stroke="#0A0A0A" stroke-width="2"/>
+    <text x="0" y="60" font-family="Jost" font-size="34" font-weight="500">Your application, unchanged</text>
+    <text x="0" y="96" font-size="18" fill="#6B6862">inside a confidential VM on Google Cloud</text>
+    <text x="0" y="150" font-size="16" letter-spacing="2" fill="#5A5751">PARALLAX-ATTEST</text>
+    <text x="0" y="180" font-size="18" fill="#3a382f">takes a hardware proof at start-up that covers your code,</text>
+    <text x="0" y="206" font-size="18" fill="#3a382f">not just the firmware, and binds it to the connection</text>
+    <line x1="560" y1="60" x2="720" y2="60" stroke="#0A0A0A" stroke-width="2" marker-end="url(#arr2)"/>
+    <text x="640" y="44" text-anchor="middle" font-size="15" letter-spacing="1.5" fill="#5A5751">PROOF</text>
+    <text x="740" y="60" font-family="Jost" font-size="34" font-weight="500">A proxy in front of the client</text>
+    <text x="740" y="96" font-size="18" fill="#6B6862">outbound connections only</text>
+    <text x="740" y="150" font-size="16" letter-spacing="2" fill="#5A5751">PARALLAX-PROXY CHECKS</text>
+    <text x="740" y="180" font-size="18" fill="#3a382f">the proof is genuine · the chip is not revoked or out of date ·</text>
+    <text x="740" y="206" font-size="18" fill="#3a382f">the code matches the known-good values · the residual trust is within your policy</text>
+    <line x1="1300" y1="60" x2="1440" y2="60" stroke="#0A0A0A" stroke-width="2" marker-end="url(#arr2)"/>
+    <text x="1370" y="44" text-anchor="middle" font-size="15" letter-spacing="1.5" fill="#5A5751">OR REFUSES</text>
+    <text x="1460" y="60" font-family="Jost" font-size="34" font-weight="500">Your client</text>
+    <text x="1460" y="96" font-size="18" fill="#6B6862">unchanged</text>
+  </svg>
+  <div style="border-top:2px solid var(--aais-black);margin-top:56px;padding-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:64px">
+    <div><p style="font-family:var(--font-sans);font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);margin:0 0 12px">What it gives you</p><p style="font-family:var(--font-text);font-size:22px;line-height:1.45;margin:0;color:var(--aais-black)">The one place in the programme where an operator gets a real, end-to-end, checked property rather than a claim.</p></div>
+    <div><p style="font-family:var(--font-sans);font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);margin:0 0 12px">What it does not, stated plainly</p><p style="font-family:var(--font-text);font-size:22px;line-height:1.45;margin:0;color:var(--ink-2)">Google Cloud only. Intel TDX only. It produces a certificate, not a receipt. It has been tested on five deployments we wrote ourselves and no real-world system yet.</p></div>
+  </div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 18 · What building taught the standard -->
+<section class="s" data-label="Caught before deployment">
+  <p class="eyebrow">Eight defects in the standard, found by trying to build against it</p>
+  <h2 class="title" style="margin-bottom:12px">Reading a specification finds typos. Building against it finds the things that would have failed in production.</h2>
+  <p class="lede" style="margin-bottom:40px">Six of the eight are invisible to the standard’s own validator: the receipt passes every check and still fails to carry the property the field exists for. Three examples, in plain terms.</p>
+  <div class="list">
+    <div class="row"><span class="i">01</span><span class="h">The reference example was wrong</span><span class="d">The standard’s own strongest sample receipt carries a hardware measurement of the wrong size for the chip it names. Anyone who copied it would have inherited the error.</span></div>
+    <div class="row"><span class="i">02</span><span class="h">The tamper-evident chain protected three fields, not the receipt</span><span class="d">Everything else could be altered without breaking a link. The fix costs nothing: chain the whole receipt. It is drafted and waiting to be filed.</span></div>
+    <div class="row"><span class="i">03</span><span class="h">A required anti-replay field nobody could honestly fill</span><span class="d">The standard requires a challenge from the relying party, and nothing in the ecosystem issues one. A challenge the agent mints for itself defeats no replay, and the validator cannot tell.</span></div>
+  </div>
+  <p class="src">All eight are documented in the open, with the change each one asks of the standard · the same method put three requirements into the standard in the first place</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 19 · Divider 04 -->
+<section class="s divider" data-label="Section 04" data-divider="19a" data-object="W13" style="padding:0">
+  <div class="obj"><div style="position:absolute;right:-8%;top:-46%;width:42%;height:132%;transform:rotate(21deg)"><svg viewBox="0 0 136 172" preserveAspectRatio="none" fill="currentColor"><polygon points="60,0 0,150 96,150" fill-opacity="0.45"/><polygon points="60,0 96,150 136,172 100,22" fill-opacity="0.30"/><polygon points="0,150 96,150 136,172 40,172" fill-opacity="0.15"/></svg></div></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">04</p><h2>The roadmap</h2><p class="stand">What comes next, in order.</p></div>
+  <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
+</section>
+
+<!-- 20 · Phases -->
+<section class="s tight" data-label="Roadmap · phases">
+  <p class="eyebrow">Sequence, not schedule · the roadmap states effort, not dates</p>
+  <h2 class="title" style="margin-bottom:24px;font-size:44px;max-width:40ch">Five phases, from what is done to what decides adoption</h2>
+  <div class="bands">
+    <div class="band"><p class="o">01</p><div><p class="ph">Done</p><p class="pp">P01 · P02 · P05</p></div><div><p class="what">Who you are trusting, what a signature really binds, and accountable-but-private identity</p><p class="why">Each has a working tool. The audit tool draws the map of what remains, so every claim on these slides can be checked against software rather than taken from a person.</p></div></div>
+    <div class="band"><p class="o">02</p><div><p class="ph">Quick, decisive</p><p class="pp">P03 · P04 · P08</p></div><div><p class="what">Proof freshness, summary soundness, and the cost of a tamper-evident log at fleet scale</p><p class="why">Weeks of work on apparatus that already exists. This phase also builds the recorder, the single largest step toward a complete receipt.</p></div></div>
+    <div class="band"><p class="o">03</p><div><p class="ph">The hard questions</p><p class="pp">P06 · P07</p></div><div><p class="what">Delegation that cannot amplify authority, and evidence that survives a boundary</p><p class="why">Genuine open design space. The delegation chain is deliberately not designed until the research says what it must guarantee.</p></div></div>
+    <div class="band"><p class="o">04</p><div><p class="ph">Longer horizon</p><p class="pp">P09 · P10</p></div><div><p class="what">Proving compliance without revealing data, and a runtime bill of materials</p><p class="why">Real cryptographic work with a real chance of a negative result, which is why each starts with a small, decisive feasibility study.</p></div></div>
+    <div class="band"><p class="o">05</p><div><p class="ph">Institutional</p><p class="pp">P11 · P12</p></div><div><p class="what">Who pays for verification, and why assurance regimes fail</p><p class="why">Ranked last because they are not technical, and possibly the most determinative work here. Certificate Transparency won because browsers mandated it, not because the cryptography was elegant.</p></div></div>
+  </div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 21 · Two decisions (split) -->
+<section class="s split" data-label="Two decisions">
+  <div class="l"><p class="eyebrow">Decisions, not engineering</p><h2 style="font-family:var(--font-display);font-weight:500;font-size:72px;line-height:1.06;letter-spacing:-.02em;margin:0;max-width:12ch;text-wrap:balance">Two things nobody can code around</h2><p style="font-family:var(--font-text);font-size:26px;line-height:1.45;color:var(--ink-2);margin:40px 0 0;max-width:30ch">Both are real trade-offs a working group has to decide, and both get sharper the moment the recorder exists. Security leaders are the right people in the room for them.</p></div>
+  <div class="r">
+    <h3>A complete audit trail links every action to every other</h3>
+    <p>The chain that makes the receipt tamper-evident also makes every action an agent takes traceable to every other one, by construction. That is the opposite of the privacy property one of our own papers argues for. Building the recorder turns this from a footnote into a choice.</p>
+    <h3>Fail open, or fail closed</h3>
+    <p>Two of the shipped tools refuse requests that fail their checks. A third never refuses, on the principle that a meter must not be able to take down the service it measures. Put all three in one request path and there is no agreed answer to what happens when a check cannot complete: availability or enforcement.</p>
+  </div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 22 · Divider 05 -->
+<section class="s divider" data-label="Section 05" data-divider="19b·r" data-object="W14" style="padding:0">
+  <div class="obj"><div style="position:absolute;right:2%;top:-24%;width:56%;height:118%;transform:rotate(-14deg)"><svg viewBox="0 0 200 218" preserveAspectRatio="none" fill="currentColor"><polygon points="0,98 150,58 70,218" fill-opacity="0.45"/><polygon points="0,98 150,58 200,0 50,40" fill-opacity="0.15"/><polygon points="150,58 70,218 120,160 200,0" fill-opacity="0.30"/></svg></div></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">05</p><h2>The asks</h2><p class="stand">Where your experience is the missing input.</p></div>
+  <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
+</section>
+
+<!-- 23 · Asks -->
+<section class="s tight" data-label="Five asks">
+  <p class="eyebrow">Five asks, each traceable to a gap the roadmap names</p>
+  <h2 class="title" style="margin-bottom:36px">What we need from the people in this room</h2>
+  <div class="list">
+    <div class="row"><span class="i">01</span><span class="h">A real system to run it on</span><span class="d">Every result so far comes from five deployments we wrote ourselves. One production workload behind the confidential-VM path, with the audit tool run on its records, would be worth more than the next paper.</span></div>
+    <div class="row"><span class="i">02</span><span class="h">Tell us what your auditors would accept</span><span class="d">The two papers on verification economics and assurance failure are ranked last and may matter most. They need practitioners who have lived through SOC 2, ISO and FedRAMP, not more literature.</span></div>
+    <div class="row"><span class="i">03</span><span class="h">Hardware beyond one cloud</span><span class="d">Every measurement is one chip on one cloud. The apparatus deploys, measures and tears itself down; it needs somewhere else to run.</span></div>
+    <div class="row"><span class="i">04</span><span class="h">Sit on the decisions</span><span class="d">Audit trail against privacy, fail-open against fail-closed, how fine-grained the log should be. These are working-group calls, and they need people who carry the accountability.</span></div>
+    <div class="row"><span class="i">05</span><span class="h"><span class="mark">Argue with</span> the order</span><span class="d">The priorities are one person’s assessment, written down so they can be contested. If your risk register ranks these differently, that is the input we are asking for.</span></div>
+  </div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 24 · Join -->
+<section class="s center" data-label="Join" data-divider="19c·r" data-object="W15" style="padding:0 150px">
+  <div style="position:absolute;inset:0;color:var(--aais-cinnabar);pointer-events:none"><div style="position:absolute;right:-12%;top:-10%;width:71.28%;height:129.6%;transform:rotate(-11deg)"><svg viewBox="0 0 214 148" preserveAspectRatio="none" fill="currentColor" style="width:100%;height:100%;display:block"><polygon points="214,0 214,140 34,90" fill-opacity="0.45"/><polygon points="214,0 34,90 0,98 180,8" fill-opacity="0.15"/><polygon points="214,140 34,90 0,98 180,148" fill-opacity="0.30"/></svg></div></div>
+  <p class="eyebrow" style="position:relative;z-index:2">Join us</p>
+  <h2 style="font-family:var(--font-display);font-weight:500;font-size:64px;line-height:1.09;letter-spacing:-.01em;margin:0 0 44px;max-width:22ch;position:relative;z-index:2;text-wrap:balance">The standard is written in the open. So is everything on these slides.</h2>
+  <p style="font-family:var(--font-text);font-size:32px;line-height:1.5;margin:0;max-width:34ch;color:var(--ink-2);position:relative;z-index:2"><span class="poc">Proof-of-Control</span> is stewarded by the Advanced AI Society. Join a working group, or bring us a system to check.</p>
+  <p style="font-family:var(--font-sans);font-size:20px;letter-spacing:.04em;color:var(--aais-black);margin:40px 0 0;position:relative;z-index:2">advancedaisociety.org · github.com/AAI-Society/ov-poc-standard</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
