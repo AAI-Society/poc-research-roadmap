@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proof-of-Control Research Agenda</title>
+<meta name="description" content="Advanced AI Society — the Proof-of-Control research agenda: problems, solutions, traction, roadmap and asks. September 2026.">
+<style>
+/*FONTS*/
+:root{
+  --aais-black:#0A0A0A; --aais-off-white:#F0EDEA; --aais-neon:#CFFF04; --aais-cinnabar:#C0431B;
+  --surface-2:#E8E5E0; --ink-2:#3a382f; --ink-3:#6B6862; --ink-4:#5A5751;
+  --hair:rgba(10,10,10,.16); --hair-10:rgba(10,10,10,.10); --black-60:rgba(10,10,10,.60); --black-30:rgba(10,10,10,.30); --black-10:rgba(10,10,10,.10);
+  --series-1:#324292; --series-2:#0E3A08;
+  --font-display:"Jost","Futura","Avenir Next","Helvetica Neue",Arial,sans-serif;
+  --font-text:"Atkinson Hyperlegible Next","Helvetica Neue",Arial,sans-serif;
+  --font-sans:"Inter","Montserrat","Helvetica Neue",Arial,sans-serif;
+  --font-code:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+html,body{height:100%;margin:0}
+body{background:#3a3a3a;color:var(--aais-black);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow:hidden}
+.stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform:translate(-50%,-50%) scale(1);transform-origin:center center;background:var(--aais-off-white)}
+.s{position:absolute;inset:0;width:1920px;height:1080px;box-sizing:border-box;background:var(--aais-off-white);color:var(--aais-black);overflow:hidden;padding:128px 150px 118px;display:none;flex-direction:column;justify-content:flex-start;font-family:var(--font-sans)}
+.s.on{display:flex}
+.s.center{justify-content:center}
+.s.tight{padding-top:96px}
+@media (prefers-reduced-motion:no-preference){
+  .s.on{animation:arrive 300ms cubic-bezier(.22,1,.36,1) both}
+  @keyframes arrive{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+}
+.eyebrow{font-family:var(--font-sans);font-size:18px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin:0 0 34px}
+.title{font-family:var(--font-display);font-weight:500;font-size:52px;line-height:1.09;letter-spacing:-.01em;margin:0 0 20px;max-width:28ch;text-wrap:balance}
+.lede{font-family:var(--font-text);font-size:26px;line-height:1.45;color:var(--ink-2);margin:0 0 44px;max-width:54ch}
+.poc{font-weight:600}
+.mark{background:var(--aais-neon);color:var(--aais-black);font-weight:600;padding:0 .12em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+code{font-family:var(--font-code);font-size:.92em}
+.foot{position:absolute;bottom:44px;left:150px;right:150px;display:flex;justify-content:space-between;align-items:center;z-index:5}
+.foot .n{font-family:var(--font-sans);font-size:14px;letter-spacing:.06em;color:var(--ink-3)}
+.lockup{width:180px;height:auto;display:block;aspect-ratio:1082.6/64.59}
+.src{font-family:var(--font-sans);font-size:17px;letter-spacing:.04em;color:var(--ink-3);margin:32px 0 0;max-width:110ch}
+.src b{font-weight:500;color:var(--aais-black)}
+.divider .obj{position:absolute;inset:0;color:var(--aais-cinnabar);pointer-events:none}
+.divider .obj svg{width:100%;height:100%;display:block}
+.divider .col{position:absolute;left:150px;top:120px;right:150px;z-index:2}
+.divider .sec{font-family:var(--font-sans);font-size:20px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin:0 0 16px}
+.divider .ord{font-family:var(--font-display);font-weight:600;font-size:340px;line-height:.78;letter-spacing:-.05em;margin:0}
+.divider h2{font-family:var(--font-display);font-weight:600;font-size:75px;line-height:1.04;letter-spacing:-.02em;margin:28px 0 0;max-width:12ch}
+.divider .stand{font-family:var(--font-text);font-size:26px;line-height:1.35;margin:22px 0 0;max-width:39ch;color:var(--ink-2)}
+.statement{font-family:var(--font-display);font-weight:500;font-size:112px;line-height:1.06;letter-spacing:-.02em;margin:0;max-width:18ch;text-wrap:balance}
+.support{font-family:var(--font-text);font-size:34px;line-height:1.45;margin:56px 0 0;max-width:44ch;color:var(--ink-2)}
+/* metric grid */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:0 56px;border-top:2px solid var(--aais-black)}
+.metrics>div{padding:40px 0 34px;border-bottom:1px solid var(--hair)}
+.metrics .v{font-family:var(--font-display);font-weight:500;font-size:110px;line-height:.92;letter-spacing:-.02em}
+.metrics .l{font-family:var(--font-sans);font-size:20px;font-weight:500;color:var(--ink-3);margin-top:14px;max-width:22ch;line-height:1.3}
+/* three columns */
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:56px}
+.cols3 .bar{height:20px;background:var(--aais-black)}
+.cols3 .bar.accent{background:var(--aais-cinnabar)}
+.cols3 .k{font-family:var(--font-sans);font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);margin:28px 0 0}
+.cols3 h3{font-family:var(--font-display);font-weight:500;font-size:40px;line-height:1.1;margin:14px 0 0;letter-spacing:-.01em}
+.cols3 p{font-family:var(--font-text);font-size:23px;line-height:1.5;margin:24px 0 0;color:var(--aais-black)}
+.cols3 .q{font-family:var(--font-text);font-size:21px;line-height:1.45;margin:22px 0 0;color:var(--ink-2);border-top:1px solid var(--hair);padding-top:18px}
+/* tables */
+table.t{width:100%;border-collapse:collapse;table-layout:fixed}
+table.t th{font-family:var(--font-sans);font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);text-align:left;padding:0 24px 14px 0;border-bottom:2px solid var(--aais-black);font-weight:600}
+table.t td{font-family:var(--font-text);font-size:21px;line-height:1.35;vertical-align:top;padding:18px 24px 18px 0;border-bottom:1px solid var(--hair)}
+table.t td.name{font-family:var(--font-sans);font-weight:600;font-size:21px}
+table.t td.det{font-family:var(--font-sans);font-weight:600;font-size:21px}
+table.t td.muted{color:var(--ink-2)}
+table.t tr:last-child td{border-bottom:2px solid var(--aais-black)}
+table.t.compact td{padding:11px 24px 11px 0;font-size:19px}
+table.t.compact td.det{font-size:19px}
+/* list instrument */
+.list{border-top:2px solid var(--aais-black)}
+.list .row{display:grid;grid-template-columns:64px 560px 1fr;gap:0 36px;align-items:baseline;padding:22px 0;border-bottom:1px solid var(--hair)}
+.list .row .i{font-family:var(--font-sans);font-size:22px;color:var(--ink-3)}
+.list .row .h{font-family:var(--font-display);font-size:36px;line-height:1.12;letter-spacing:-.01em}
+.list .row .d{font-family:var(--font-text);font-size:23px;line-height:1.45;color:var(--ink-2)}
+/* bar chart */
+.bars{display:flex;align-items:flex-end;gap:40px;height:330px;border-bottom:2px solid var(--aais-black)}
+.bars>div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+.bars .v{font-family:var(--font-display);font-weight:500;font-size:40px;line-height:1;margin-bottom:14px}
+.bars .b{width:100%;background:var(--aais-black)}
+.bars .b.accent{background:var(--aais-cinnabar)}
+.barlab{display:flex;gap:40px;margin-top:18px}
+.barlab>div{flex:1;text-align:center;font-family:var(--font-sans);font-size:20px;font-weight:600;line-height:1.25}
+.barlab>div span{display:block;font-weight:400;color:var(--ink-3);font-size:17px;margin-top:8px;letter-spacing:.02em}
+/* coverage grid */
+.cov{display:grid;grid-template-columns:1fr 1fr;gap:0 80px}
+.cov .hd,.cov .r{display:grid;grid-template-columns:44px 1fr 150px 150px;align-items:center}
+.cov .hd{font-family:var(--font-sans);font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-4);font-weight:600;padding-bottom:12px;border-bottom:2px solid var(--aais-black)}
+.cov .r{height:44px;border-bottom:1px solid var(--hair)}
+.cov .r .i{font-family:var(--font-sans);font-size:17px;color:var(--ink-3)}
+.cov .r .f{font-family:var(--font-code);font-size:21px}
+.cov .r .c{display:flex;align-items:center;justify-content:flex-start;gap:12px;font-family:var(--font-sans);font-size:14px;letter-spacing:.06em;color:var(--ink-3)}
+.sq{width:18px;height:18px;display:inline-block;box-sizing:border-box}
+.sq.full{background:var(--aais-black)}
+.sq.half{border:2px solid var(--aais-black);background:transparent}
+.sq.none{border:1px solid rgba(10,10,10,.22);background:transparent}
+.sq.accent{background:var(--aais-cinnabar)}
+.legend{display:flex;gap:40px;align-items:center;font-family:var(--font-sans);font-size:17px;color:var(--ink-2);margin-top:28px}
+.legend span{display:inline-flex;gap:12px;align-items:center}
+/* split slide */
+.split{padding:0}
+.split .l{position:absolute;left:0;top:0;bottom:0;width:50%;padding:128px 80px 118px 150px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
+.split .r{position:absolute;right:0;top:0;bottom:0;width:50%;background:var(--surface-2);padding:216px 150px 118px 96px;box-sizing:border-box}
+.split .r h3{font-family:var(--font-display);font-weight:500;font-size:34px;line-height:1.15;margin:0 0 16px;letter-spacing:-.01em}
+.split .r p{font-family:var(--font-text);font-size:22px;line-height:1.5;color:var(--ink-2);margin:0 0 44px;max-width:44ch}
+/* timeline bands */
+.bands{display:flex;flex-direction:column;max-width:1620px}
+.band{display:grid;grid-template-columns:96px 340px 1fr;gap:0 40px;align-items:start;padding:18px 0;border-top:2px solid var(--aais-black)}
+.band:first-child{border-top:0}
+.band .o{font-family:var(--font-display);font-weight:500;font-size:48px;line-height:.9;color:rgba(10,10,10,.28);margin:0}
+.band .ph{font-family:var(--font-display);font-weight:500;font-size:30px;line-height:1.14;letter-spacing:-.01em;margin:0}
+.band .pp{font-family:var(--font-sans);font-size:18px;letter-spacing:.08em;color:var(--ink-3);margin:8px 0 0}
+.band .what{font-family:var(--font-display);font-weight:500;font-size:25px;line-height:1.18;letter-spacing:-.01em;margin:0;max-width:52ch}
+.band .why{font-family:var(--font-text);font-size:18px;line-height:1.4;color:var(--ink-2);margin:6px 0 0;max-width:66ch}
+/* stats trio */
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:56px;border-top:2px solid var(--aais-black);padding-top:48px}
+.trio .v{font-family:var(--font-display);font-weight:500;font-size:150px;line-height:.9;letter-spacing:-.02em}
+.trio .l{font-family:var(--font-sans);font-size:21px;font-weight:500;color:var(--ink-3);margin-top:18px;max-width:22ch;line-height:1.35}
+.trio .l b{color:var(--aais-black);font-weight:600}
+/* HUD */
+.hud{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;pointer-events:none;z-index:50;font-family:var(--font-sans);font-size:12px;letter-spacing:.06em;color:rgba(240,237,234,.6);padding:10px 0;opacity:0;transition:opacity 300ms}
+body.showhud .hud{opacity:1}
+@media print{
+  body{background:#F0EDEA;overflow:visible}
+  .stage{position:static;transform:none!important;width:auto;height:auto;background:none}
+  .s{display:flex!important;position:relative;inset:auto;page-break-after:always;break-after:page;animation:none!important}
+  .hud{display:none}
+  @page{size:1920px 1080px;margin:0}
+}
+</style>
+</head>
+<body>
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <symbol id="lockup" viewBox="0 0 1082.6 64.59"><g transform="translate(0 3.58) scale(0.789474)"><rect x="0" y="0" width="14" height="76"/><rect x="0" y="0" width="26" height="14"/><rect x="0" y="62" width="26" height="14"/><rect x="62" y="0" width="14" height="76"/><rect x="50" y="0" width="26" height="14"/><rect x="50" y="62" width="26" height="14"/></g><text x="92.39" y="63.58" font-family="Inter,Montserrat,'Helvetica Neue',Arial,sans-serif" font-weight="700" font-size="86" letter-spacing="1.72" textLength="992.31" lengthAdjust="spacingAndGlyphs">ADVANCED AI SOCIETY</text></symbol>
+</svg>
+
+<div class="stage" id="stage">
+
+<!-- 01 · Cover -->
+<section class="s center" data-label="Cover" style="padding:0 150px">
+  <svg class="lockup" style="width:400px" role="img" aria-label="Advanced AI Society"><use href="#lockup"/></svg>
+  <h1 style="font-family:var(--font-display);font-weight:500;font-size:132px;line-height:.98;letter-spacing:-.025em;margin:56px 0 0;max-width:15ch"><span class="poc">Proof-of-Control</span><br>The research agenda</h1>
+  <p style="font-family:var(--font-text);font-size:34px;line-height:1.4;margin:40px 0 0;color:var(--ink-2);max-width:44ch">Twelve papers, seven shipped tools, and the one record none of them emit yet.</p>
+  <div style="position:absolute;bottom:96px;left:150px;right:150px;display:flex;justify-content:space-between;align-items:baseline"><p style="font-family:var(--font-sans);font-size:19px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:0">Moving trust at the speed of machines</p><p style="font-family:var(--font-sans);font-size:19px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:0">Research roadmap · September 2026</p></div>
+</section>
+
+<!-- 03 · The standard in numbers -->
+<section class="s" data-label="The standard in numbers">
+  <p class="eyebrow">Proof-of-Control v0.1 · working draft, August 2026</p>
+  <h2 class="title">An open standard for runtime verifiability, and what writing it surfaced</h2>
+  <p class="lede">Writing the standard, building the reference implementation and putting the paper through review produced a set of questions the specification answers by assertion, by convention, or not at all.</p>
+  <div class="metrics">
+    <div><div class="v">127</div><div class="l">requirements across six verification domains and four cross-cutting chapters</div></div>
+    <div><div class="v">21</div><div class="l">fields in the evidence record that compliance means</div></div>
+    <div><div class="v">13</div><div class="l">open issues recorded by the working group in Appendix D</div></div>
+    <div><div class="v">32</div><div class="l">threats graded in Appendix C, most of them <em>Partial</em></div></div>
+  </div>
+  <p class="src">Three independent reviews returned <b>weak reject</b> with blocking objections · two are unaddressed and become P01 and P02 · three requirements exist only because the implementation was wrong in a way the prose could not reveal</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 04 · Divider 01 -->
+<section class="s divider" data-label="Section 01" data-divider="17a" data-object="B11" style="padding:0">
+  <div class="obj"><div style="position:absolute;right:-10.2%;bottom:-40%;width:70.2%;height:136%;transform:rotate(-3.5deg)"><svg viewBox="0 0 74.83 81.59" preserveAspectRatio="none" fill="currentColor"><polygon points="20.23,4.73 53.9,0 74.83,26.79 41.16,31.52" fill-opacity="0.15"/><polygon points="74.83,26.79 41.16,31.52 20.93,81.59 54.6,76.86" fill-opacity="0.45"/><polygon points="41.16,31.52 20.23,4.73 0,54.8 20.93,81.59" fill-opacity="0.30"/></svg></div></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">01</p><h2>The problems</h2><p class="stand">What the standard claims but cannot show.</p></div>
+  <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
+</section>
+
+<!-- 05 · Three claims -->
+<section class="s" data-label="Three claims">
+  <p class="eyebrow">Found by review, by measurement, and by building</p>
+  <h2 class="title" style="margin-bottom:60px">Three things the standard says that it cannot currently support</h2>
+  <div class="cols3">
+    <div><div class="bar"></div><p class="k">C8 · Tiers · P01</p><h3>“Nobody left to trust”</h3><p>Tier 3 says anyone can check the evidence with published tools. Deploying on Intel TDX forced us to enumerate five parties a verifier must still trust, four of them silently and permanently.</p><p class="q">Found with a hardware measurement, not an argument. Paper drafted, tool shipped.</p></div>
+    <div><div class="bar"></div><p class="k">C4 / C7 · P02</p><h3>Bytes are not effects</h3><p>Theorem 1 claims execution fidelity by digest comparison. Canonical byte equality binds a request representation. It does not bind what an endpoint does with it: defaults, retries, aliases, redirects.</p><p class="q">Everything downstream inherits the gap: complete mediation, self-enforcing execution, the Tier 3 and 4 claims.</p></div>
+    <div><div class="bar accent"></div><p class="k">C4 · Authorization · P04</p><h3>A null result that tests nothing</h3><p>The paper reports that sweeping the bounded-summary label bound made no difference. It could not: no policy decision ever reads the labels. The experiment is presented as evidence the bound is harmless.</p><p class="q">The cheapest correction in the roadmap, and it fixes a claim currently in print.</p></div>
+  </div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 06 · Trust table -->
+<section class="s tight" data-label="Five parties">
+  <p class="eyebrow">What one TDX measurement asks you to believe · P01</p>
+  <h2 class="title">Tier 3 says there is nobody left to trust. On Intel TDX there are five.</h2>
+  <p class="lede" style="margin-bottom:34px">Four of the five have no detection mechanism at all. Anchoring the log makes the history auditable and removes none of them.</p>
+  <table class="t">
+    <colgroup><col style="width:22%"><col style="width:40%"><col style="width:24%"><col style="width:14%"></colgroup>
+    <thead><tr><th>Party</th><th>What you must assume</th><th>What a breach buys</th><th>Detectable in</th></tr></thead>
+    <tbody>
+      <tr><td class="name">Intel</td><td class="muted">The TDX module, microcode and CPU behave as specified; the provisioning key is not misissued</td><td class="muted">Arbitrary quote forgery inside the hardware boundary</td><td class="det">never</td></tr>
+      <tr><td class="name">Intel’s certification service</td><td class="muted">The collateral fetched to check a quote is authentic</td><td class="muted">Revoked or emulated hardware presented as valid</td><td class="det" style="color:var(--ink-2);font-weight:500">~12 h</td></tr>
+      <tr><td class="name">The quoting enclave</td><td class="muted">It measures TD reports accurately and signs without key leakage</td><td class="muted">Forged execution claims on a compromised host</td><td class="det">never</td></tr>
+      <tr><td class="name">The cloud operator</td><td class="muted">The host does not extract domain memory; the measured firmware is what it claims</td><td class="muted">Measurement injection at boot; side-channel extraction</td><td class="det">never</td></tr>
+      <tr><td class="name">Whoever publishes reference values</td><td class="muted">The MRTD compared against belongs to the code you believe it does</td><td class="muted">Valid attestation of subverted software</td><td class="det">never</td></tr>
+    </tbody>
+  </table>
+  <p class="src">Only the certification service’s collateral is checked on a schedule, and that schedule is the one thing an operator can shorten · <b>parallax</b> derives this set from a deployment description rather than hardcoding it</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 07 · 39.5 ms -->
+<section class="s" data-label="The cost of a quote">
+  <p class="eyebrow">Measured on Intel TDX, GCP c3-standard-4 · P03</p>
+  <h2 class="title">One hardware quote costs 2.6× the entire per-action budget</h2>
+  <p class="lede">Per-action attestation is not expensive, it is impossible. Every deployment amortizes, so actions rest on a measurement taken before them, and nothing in the record says so.</p>
+  <div style="display:grid;grid-template-columns:420px 1fr;gap:0 40px;align-items:center;row-gap:34px;margin-top:10px">
+    <div style="font-family:var(--font-sans);font-size:20px;font-weight:600">Trust-domain overhead, per step<span style="display:block;font-weight:400;color:var(--ink-3);font-size:17px;margin-top:6px">+6.2% on the pipeline</span></div>
+    <div style="display:flex;align-items:center;gap:20px"><div style="width:2px;height:44px;background:var(--aais-black)"></div><span style="font-family:var(--font-display);font-size:40px;font-weight:500">9.45 µs</span><span style="font-family:var(--font-sans);font-size:17px;color:var(--ink-3)">0.22 px at this scale</span></div>
+    <div style="font-family:var(--font-sans);font-size:20px;font-weight:600">Per-action budget<span style="display:block;font-weight:400;color:var(--ink-3);font-size:17px;margin-top:6px">the whole allowance for one agent action</span></div>
+    <div style="display:flex;align-items:center;gap:20px"><div style="width:346px;height:44px;background:var(--aais-black)"></div><span style="font-family:var(--font-display);font-size:40px;font-weight:500;white-space:nowrap">15 ms</span></div>
+    <div style="font-family:var(--font-sans);font-size:20px;font-weight:600">One hardware quote<span style="display:block;font-weight:400;color:var(--ink-3);font-size:17px;margin-top:6px">4,180× the per-step overhead</span></div>
+    <div style="display:flex;align-items:center;gap:20px"><div style="width:910px;height:44px;background:var(--aais-cinnabar)"></div><span style="font-family:var(--font-display);font-size:40px;font-weight:500;white-space:nowrap">39.5 ms</span></div>
+  </div>
+  <p class="src">The measurement became requirement C7.2.3, a declared maximum refresh interval. The requirement exists; the theory for choosing the interval does not · a TDX quote also carries <b>no timestamp</b>, so freshness cannot be read, only challenged</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 08 · The record -->
+<section class="s tight" data-label="The record">
+  <p class="eyebrow">What compliance means · the evidence record</p>
+  <h2 class="title" style="margin-bottom:12px">Twenty-one fields. Seven shipped tools. <span class="mark">No record</span> emitted, by anyone.</h2>
+  <p class="lede" style="margin-bottom:22px">Computed means a shipped tool derives the value. Checked means a tool says something substantive about it. Ten fields have nothing behind them at all.</p>
+  <div class="cov">
+    <div>
+      <div class="hd"><span>#</span><span>Field</span><span>Computed</span><span>Checked</span></div>
+      <div class="r"><span class="i">1</span><span class="f">iss</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq none"></i></span></div>
+      <div class="r"><span class="i">2</span><span class="f">iat</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq half"></i>shape</span></div>
+      <div class="r"><span class="i">3</span><span class="f">nonce</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq none"></i></span></div>
+      <div class="r"><span class="i">4</span><span class="f">eat_profile</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq half"></i>shape</span></div>
+      <div class="r"><span class="i">5</span><span class="f">agent_id</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq full"></i>poc-audit</span></div>
+      <div class="r"><span class="i">6</span><span class="f">initiating_user</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq full"></i>poc-audit</span></div>
+      <div class="r"><span class="i">7</span><span class="f">agbom_digest</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq none"></i></span></div>
+      <div class="r"><span class="i">8</span><span class="f">interception_point</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq none"></i></span></div>
+      <div class="r"><span class="i">9</span><span class="f">step_index</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq none"></i></span></div>
+      <div class="r"><span class="i">10</span><span class="f">chain_head</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq none"></i></span></div>
+      <div class="r"><span class="i">11</span><span class="f">merkle_root</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq none"></i></span></div>
+    </div>
+    <div>
+      <div class="hd"><span>#</span><span>Field</span><span>Computed</span><span>Checked</span></div>
+      <div class="r"><span class="i">12</span><span class="f">tree_size</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq none"></i></span></div>
+      <div class="r"><span class="i">13</span><span class="f">policy_bundle_hash</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq none"></i></span></div>
+      <div class="r"><span class="i">14</span><span class="f">target_resource</span><span class="c"><i class="sq full"></i>transit guard</span><span class="c"><i class="sq none"></i></span></div>
+      <div class="r"><span class="i">15</span><span class="f">canonical_snapshot_hash</span><span class="c"><i class="sq full"></i>transit guard</span><span class="c"><i class="sq full"></i>poc-audit</span></div>
+      <div class="r"><span class="i">16</span><span class="f">path_summary_hash</span><span class="c"><i class="sq accent"></i></span><span class="c"><i class="sq accent"></i>no step at all</span></div>
+      <div class="r"><span class="i">17</span><span class="f">verdict</span><span class="c"><i class="sq full"></i>transit guard</span><span class="c"><i class="sq none"></i></span></div>
+      <div class="r"><span class="i">18</span><span class="f">alg</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq half"></i>shape</span></div>
+      <div class="r"><span class="i">19</span><span class="f">platform</span><span class="c"><i class="sq full"></i>parallax-attest</span><span class="c"><i class="sq half"></i>live only</span></div>
+      <div class="r"><span class="i">20</span><span class="f">measurement</span><span class="c"><i class="sq full"></i>parallax-attest</span><span class="c"><i class="sq half"></i>live only</span></div>
+      <div class="r"><span class="i">21</span><span class="f">signature</span><span class="c"><i class="sq none"></i></span><span class="c"><i class="sq half"></i>shape</span></div>
+    </div>
+  </div>
+  <div class="legend"><span><i class="sq full"></i>a shipped tool does it</span><span><i class="sq half"></i>shape only, or a live handshake only</span><span><i class="sq none"></i>nothing</span><span><i class="sq accent"></i>cannot be filled until P04 is answered</span></div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 09 · Statement with object -->
+<section class="s center" data-label="Statement · thrown away" data-object="W17">
+  <div style="position:absolute;inset:0;color:var(--aais-cinnabar);pointer-events:none"><div style="position:absolute;right:-6%;top:-14%;width:47.52%;height:106%;transform:rotate(5.5deg)"><svg viewBox="0 0 202 200" preserveAspectRatio="none" fill="currentColor" style="width:100%;height:100%;display:block"><polygon points="162,10 202,200 42,70" fill-opacity="0.45"/><polygon points="162,10 42,70 0,60 120,0" fill-opacity="0.15"/><polygon points="202,200 42,70 0,60 160,190" fill-opacity="0.30"/></svg></div></div>
+  <h2 class="statement" style="position:relative;z-index:2;max-width:14ch">The values exist and are thrown away.</h2>
+  <p class="support" style="position:relative;z-index:2;max-width:38ch">Seven tools compute five of the twenty-one fields. No tool assembles them into a record, signs it, or chains it to the previous one. The programme built five verifiers and one attester, and verifying assumes the record already exists.</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 10 · poc-audit -->
+<section class="s" data-label="What poc-audit reports">
+  <p class="eyebrow">A tool’s reading, not a person’s · poc-audit on the standard’s strongest positive vector</p>
+  <h2 class="title" style="max-width:34ch">Two rows out of twenty&#8209;two, and both establish a cost</h2>
+  <p class="lede">Run on <code>hardware-attested.json</code> with every optional input supplied. The only two established rows are the identity fields, established in the sense that every action carrying them is linkable to one subject.</p>
+  <div style="display:flex;gap:2px;height:96px;margin-top:8px">
+    <div style="flex:2;background:var(--aais-black)"></div>
+    <div style="flex:2;background:var(--black-60)"></div>
+    <div style="flex:18;background:var(--black-10)"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:300px 460px 1fr;gap:0 40px;margin-top:22px;font-family:var(--font-sans)">
+    <div><div style="font-family:var(--font-display);font-size:64px;font-weight:500;line-height:1">2</div><div style="font-size:16px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-top:10px">Established</div><div style="font-size:18px;color:var(--ink-3);margin-top:8px;line-height:1.35"><code>agent_id</code>, <code>initiating_user</code></div></div>
+    <div><div style="font-family:var(--font-display);font-size:64px;font-weight:500;line-height:1">2</div><div style="font-size:16px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-top:10px">Asserted</div><div style="font-size:18px;color:var(--ink-3);margin-top:8px;line-height:1.35"><code>platform</code>, <code>measurement</code>: a live quote is verified; nothing re-checks the record’s claim</div></div>
+    <div><div style="font-family:var(--font-display);font-size:64px;font-weight:500;line-height:1">18</div><div style="font-size:16px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-top:10px">Unchecked</div><div style="font-size:18px;color:var(--ink-3);margin-top:8px;line-height:1.35;max-width:70ch">Three out of scope by design, five covered by the schema validator, and six where nothing exists: <code>chain_head</code>, <code>merkle_root</code>, <code>step_index</code>, <code>agbom_digest</code>, <code>policy_bundle_hash</code>, <code>path_summary_hash</code></div></div>
+  </div>
+  <p class="src">Against a drifted fleet of <b>120 hosts</b>: smallest anonymity set 1, effective set 52.7, one singleton · on the standard’s best vector, the strongest thing a tool can say is a privacy finding</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 11 · Divider 02 -->
+<section class="s divider" data-label="Section 02" data-divider="18b·r" data-object="P7" style="padding:0">
+  <div class="obj"><div style="position:absolute;right:-12%;bottom:-46%;width:72%;height:142%;transform:rotate(-7.5deg)"><svg viewBox="0 0 234.3 167.87" preserveAspectRatio="none" fill="currentColor"><polygon points="0,100.93 181.7,45.38 202.16,112.32 20.47,167.87" fill-opacity="0.45"/><polygon points="0,100.93 181.7,45.38 213.83,0 32.14,55.55" fill-opacity="0.15"/><polygon points="181.7,45.38 202.16,112.32 234.3,66.94 213.83,0" fill-opacity="0.30"/></svg></div></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">02</p><h2>The solutions</h2><p class="stand">Each paper builds something, not only argues.</p></div>
+  <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
+</section>
+
+<!-- 12 · Twelve papers plotted -->
+<section class="s tight" data-label="Twelve papers · impact and effort">
+  <p class="eyebrow">Twelve papers · impact against effort</p>
+  <h2 class="title" style="margin-bottom:8px">Three are done. Three more are weeks of work on apparatus that already exists.</h2>
+  <div style="position:relative;width:1620px;height:600px;margin-top:20px">
+    <svg viewBox="0 0 1620 600" style="width:100%;height:100%;overflow:visible;font-family:var(--font-sans)">
+      <!-- gridlines -->
+      <line x1="200" y1="80" x2="1600" y2="80" stroke="#0A0A0A" stroke-opacity=".12"/>
+      <line x1="200" y1="200" x2="1600" y2="200" stroke="#0A0A0A" stroke-opacity=".12"/>
+      <line x1="200" y1="320" x2="1600" y2="320" stroke="#0A0A0A" stroke-opacity=".12"/>
+      <line x1="200" y1="440" x2="1600" y2="440" stroke="#0A0A0A" stroke-opacity=".12"/>
+      <line x1="200" y1="500" x2="1600" y2="500" stroke="#0A0A0A" stroke-width="2"/>
+      <line x1="200" y1="40" x2="200" y2="500" stroke="#0A0A0A" stroke-width="2"/>
+      <!-- y labels -->
+      <text x="180" y="86" text-anchor="end" font-size="17" font-weight="600" fill="#0A0A0A">Very high</text>
+      <text x="180" y="206" text-anchor="end" font-size="17" font-weight="600" fill="#0A0A0A">High</text>
+      <text x="180" y="326" text-anchor="end" font-size="17" font-weight="600" fill="#0A0A0A">Medium-high</text>
+      <text x="180" y="446" text-anchor="end" font-size="17" font-weight="600" fill="#0A0A0A">Medium</text>
+      <text x="180" y="40" text-anchor="end" font-size="14" letter-spacing="2" fill="#5A5751">IMPACT</text>
+      <!-- x labels -->
+      <text x="430" y="540" text-anchor="middle" font-size="17" font-weight="600" fill="#0A0A0A">Small effort</text>
+      <text x="900" y="540" text-anchor="middle" font-size="17" font-weight="600" fill="#0A0A0A">Medium effort</text>
+      <text x="1370" y="540" text-anchor="middle" font-size="17" font-weight="600" fill="#0A0A0A">Large effort</text>
+      <text x="430" y="566" text-anchor="middle" font-size="15" fill="#6B6862">weeks, existing apparatus</text>
+      <text x="900" y="566" text-anchor="middle" font-size="15" fill="#6B6862">a few months</text>
+      <text x="1370" y="566" text-anchor="middle" font-size="15" fill="#6B6862">real cryptographic work</text>
+      <!-- points: done = black, next = cinnabar, open = black 35% -->
+      <g font-size="19" fill="#0A0A0A">
+        <rect x="840" y="67" width="26" height="26" fill="#0A0A0A"/><text x="878" y="87">P01 Trust calculus</text>
+        <rect x="1060" y="67" width="26" height="26" fill="#0A0A0A"/><text x="1098" y="87">P02 Effect binding</text>
+        <rect x="290" y="187" width="26" height="26" fill="#C0431B"/><text x="328" y="207">P03 Attestation freshness</text>
+        <rect x="290" y="242" width="26" height="26" fill="#C0431B"/><text x="328" y="262">P04 Bounded summaries</text>
+        <rect x="1250" y="187" width="26" height="26" fill="#0A0A0A"/><text x="1288" y="207">P05 Unlinkable identity</text>
+        <rect x="840" y="187" width="26" height="26" fill="rgba(10,10,10,.35)"/><text x="878" y="207">P06 Delegation without amplification</text>
+        <rect x="840" y="307" width="26" height="26" fill="rgba(10,10,10,.35)"/><text x="878" y="327">P07 Evidence continuity</text>
+        <rect x="290" y="307" width="26" height="26" fill="#C0431B"/><text x="328" y="327">P08 Log concurrency</text>
+        <rect x="1250" y="427" width="26" height="26" fill="rgba(10,10,10,.35)"/><text x="1288" y="447">P09 ZK evidence</text>
+        <rect x="840" y="387" width="26" height="26" fill="rgba(10,10,10,.35)"/><text x="878" y="407">P10 Agent bill of materials</text>
+        <rect x="840" y="427" width="26" height="26" fill="rgba(10,10,10,.35)"/><text x="878" y="447">P11 Verification economics</text>
+        <rect x="840" y="467" width="26" height="26" fill="rgba(10,10,10,.35)"/><text x="878" y="487">P12 Assurance regimes</text>
+      </g>
+    </svg>
+  </div>
+  <div class="legend" style="margin-top:6px"><span><i class="sq full"></i>drafted, with a shipped tool</span><span><i class="sq accent"></i>do cheaply, soon</span><span><i class="sq" style="background:rgba(10,10,10,.35)"></i>unwritten</span><span style="color:var(--ink-3)">Impact and effort are one assessment, written down to be argued with · PRIORITIZATION.md</span></div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 13 · By domain -->
+<section class="s" data-label="By domain">
+  <p class="eyebrow">Requirements per domain, and the papers each one needs</p>
+  <h2 class="title" style="margin-bottom:12px">The specification is thinnest exactly where the design questions are hardest</h2>
+  <p class="lede" style="margin-bottom:36px">Portability has five requirements and is where an evidence chain most obviously breaks. Identity has six and carries two of the three substantive open issues.</p>
+  <div class="bars">
+    <div><div class="v">13</div><div class="b" style="height:65px"></div></div>
+    <div><div class="v">13</div><div class="b" style="height:65px"></div></div>
+    <div><div class="v">5</div><div class="b accent" style="height:25px"></div></div>
+    <div><div class="v">12</div><div class="b" style="height:60px"></div></div>
+    <div><div class="v">6</div><div class="b" style="height:30px"></div></div>
+    <div><div class="v">12</div><div class="b" style="height:60px"></div></div>
+    <div><div class="v">66</div><div class="b" style="height:330px"></div></div>
+  </div>
+  <div class="barlab">
+    <div>C1 Provenance<span>P10</span></div>
+    <div>C2 Privacy<span>P09</span></div>
+    <div>C3 Portability<span>P07</span></div>
+    <div>C4 Authorization<span>P02 · P04 · P06</span></div>
+    <div>C5 Identity<span>P05 · P06</span></div>
+    <div>C6 Security<span>P01 · P03</span></div>
+    <div>Cross-cutting<span>P01 · P03 · P08 · P11 · P12</span></div>
+  </div>
+  <p class="src">Requirement counts from the standard’s six domains and four cross-cutting chapters · C7 evidence is the deepest chapter; <b>C8 tiers is the weakest link</b></p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 14 · Dependencies -->
+<section class="s" data-label="Sequencing">
+  <p class="eyebrow">The dependencies that actually bind</p>
+  <h2 class="title" style="margin-bottom:8px">Two tracks, and everything else runs in parallel</h2>
+  <p class="lede" style="margin-bottom:24px">P01 gives the vocabulary three later papers need. P08 decides what ordering P06 can afford. The second track is mostly measurement on apparatus that already exists.</p>
+  <svg viewBox="0 0 1620 470" style="width:1620px;height:470px;overflow:visible;font-family:var(--font-display)">
+    <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0A0A0A"/></marker></defs>
+    <!-- track labels -->
+    <text x="0" y="20" font-family="Inter" font-size="15" letter-spacing="2" fill="#5A5751">TRACK A · CORRECTIVE, THEN FOUNDATIONAL</text>
+    <text x="0" y="300" font-family="Inter" font-size="15" letter-spacing="2" fill="#5A5751">TRACK B · MEASUREMENT ON EXISTING APPARATUS</text>
+    <line x1="0" y1="270" x2="1620" y2="270" stroke="#0A0A0A" stroke-opacity=".16"/>
+    <!-- Track A -->
+    <circle cx="14" cy="88" r="9" fill="#0A0A0A"/><text x="40" y="96" font-size="32" font-weight="500">P01 Trust calculus</text><text x="40" y="126" font-family="Inter" font-size="17" fill="#6B6862">done · no dependencies · the natural first paper</text>
+    <circle cx="14" cy="200" r="9" fill="#0A0A0A"/><text x="40" y="208" font-size="32" font-weight="500">P02 Effect binding</text><text x="40" y="238" font-family="Inter" font-size="17" fill="#6B6862">done · reads more cleanly after P01, does not depend on it</text>
+    <line x1="420" y1="88" x2="880" y2="60" stroke="#0A0A0A" stroke-width="2" marker-end="url(#arr)"/>
+    <line x1="420" y1="88" x2="880" y2="130" stroke="#0A0A0A" stroke-width="2" marker-end="url(#arr)"/>
+    <line x1="420" y1="88" x2="880" y2="200" stroke="#0A0A0A" stroke-width="2" marker-end="url(#arr)"/>
+    <rect x="900" y="47" width="26" height="26" fill="#C0431B"/><text x="940" y="68" font-size="30" font-weight="500">P03 Attestation freshness</text><text x="1330" y="68" font-family="Inter" font-size="17" fill="#6B6862">small</text>
+    <rect x="900" y="117" width="26" height="26" fill="rgba(10,10,10,.35)"/><text x="940" y="138" font-size="30" font-weight="500">P07 Evidence continuity</text><text x="1330" y="138" font-family="Inter" font-size="17" fill="#6B6862">medium</text>
+    <rect x="900" y="187" width="26" height="26" fill="rgba(10,10,10,.35)"/><text x="940" y="208" font-size="30" font-weight="500">P09 Evidence that reveals nothing</text><text x="1450" y="208" font-family="Inter" font-size="17" fill="#6B6862">large</text>
+    <!-- Track B -->
+    <rect x="1" y="345" width="26" height="26" fill="#C0431B"/><text x="40" y="366" font-size="32" font-weight="500">P04 Bounded summaries</text><text x="40" y="396" font-family="Inter" font-size="17" fill="#6B6862">days to weeks · corrects a claim in print</text>
+    <rect x="1" y="425" width="26" height="26" fill="#C0431B"/><text x="40" y="446" font-size="32" font-weight="500">P08 Log concurrency</text><text x="40" y="476" font-family="Inter" font-size="17" fill="#6B6862">small · must precede P06</text>
+    <line x1="440" y1="358" x2="880" y2="400" stroke="#0A0A0A" stroke-width="2" marker-end="url(#arr)"/>
+    <line x1="420" y1="438" x2="880" y2="412" stroke="#0A0A0A" stroke-width="2" marker-end="url(#arr)"/>
+    <rect x="900" y="393" width="26" height="26" fill="rgba(10,10,10,.35)"/><text x="940" y="414" font-size="30" font-weight="500">P06 Delegation without amplification</text><text x="940" y="444" font-family="Inter" font-size="17" fill="#6B6862">medium · the same difficulty as P04, seen from the other direction</text>
+  </svg>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 15 · Tooling arc -->
+<section class="s" data-label="The tooling arc">
+  <p class="eyebrow">What gets built, in order · fields a signed record carries after each step</p>
+  <h2 class="title" style="margin-bottom:12px">Six steps from zero to twenty. The arc ends at twenty, not twenty-one.</h2>
+  <p class="lede" style="margin-bottom:30px">A roadmap whose steps do not move a number is a wish list. <code>path_summary_hash</code> has no tool and no step, because P04 has to be answered before anything can fill it honestly.</p>
+  <div style="position:relative">
+    <div style="position:absolute;left:0;right:0;top:calc(330px - 330px);border-top:2px dashed var(--aais-black);opacity:.5"></div>
+    <div style="position:absolute;right:0;top:-30px;font-family:var(--font-sans);font-size:16px;color:var(--ink-3);letter-spacing:.04em">21 · the full record</div>
+    <div class="bars" style="height:330px">
+      <div><div class="v">0</div><div class="b" style="height:2px"></div></div>
+      <div><div class="v">13</div><div class="b accent" style="height:204px"></div></div>
+      <div><div class="v">17</div><div class="b" style="height:267px"></div></div>
+      <div><div class="v">18</div><div class="b" style="height:283px"></div></div>
+      <div><div class="v">18</div><div class="b" style="height:283px"></div></div>
+      <div><div class="v">20</div><div class="b" style="height:314px"></div></div>
+    </div>
+  </div>
+  <div class="barlab">
+    <div>T1 · poc-audit<span>shipped · the map</span></div>
+    <div>T2 · ephemeris<span>phase 1 planned · the missing producer</span></div>
+    <div>T3 · transit guard<span>designed · write down what it knows</span></div>
+    <div>T4 · spectrum<span>designed, forks open · one field</span></div>
+    <div>T5 · parallax freshness<span>designed · checks four fields</span></div>
+    <div>T6 · delegation chain<span>not designed, deliberately</span></div>
+  </div>
+  <p class="src"><b>ephemeris</b> is the largest single commitment: the recorder at the eight interception hooks that turns computed values into signed, chained records · its research is P08 and P07, answered by building rather than argued</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 16 · Divider 03 -->
+<section class="s divider" data-label="Section 03" data-divider="18d" data-object="B12" style="padding:0">
+  <div class="obj"><div style="position:absolute;right:-4%;bottom:-46%;width:58%;height:118%;transform:rotate(-30deg)"><svg viewBox="0 0 95.68 63.57" preserveAspectRatio="none" fill="currentColor"><polygon points="22.3,1.05 82.29,0 95.68,22.29 35.69,23.33" fill-opacity="0.15"/><polygon points="95.68,22.29 35.69,23.33 13.39,63.57 73.38,62.52" fill-opacity="0.45"/><polygon points="35.69,23.33 22.3,1.05 0,41.28 13.39,63.57" fill-opacity="0.30"/></svg></div></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">03</p><h2>Traction</h2><p class="stand">What has shipped, and what it established.</p></div>
+  <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
+</section>
+
+<!-- 17 · Three stats -->
+<section class="s center" data-label="Traction at a glance">
+  <p class="eyebrow">Since the working draft · August to September 2026</p>
+  <div class="trio">
+    <div><div class="v">3</div><div class="l"><b>papers drafted</b>, each with a shipped Rust tool: P01, P02 and P05</div></div>
+    <div><div class="v">7</div><div class="l"><b>tools shipped</b>, four of them the roadmap did not anticipate</div></div>
+    <div><div class="v">8</div><div class="l"><b>defects found in the standard itself</b>, three of them blocking, all by building</div></div>
+  </div>
+  <p class="src" style="margin-top:56px">parallax · transit · occultation · parallax-proxy · parallax-attest · occultation-gateway · poc-audit · <b>all under github.com/AAI-Society</b></p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 18 · Seven tools -->
+<section class="s tight" data-label="What you can run today">
+  <p class="eyebrow">What you can run today</p>
+  <h2 class="title" style="margin-bottom:28px">Seven tools, stated as narrowly as they deserve</h2>
+  <table class="t" style="font-size:19px">
+    <colgroup><col style="width:19%"><col style="width:46%"><col style="width:35%"></colgroup>
+    <thead><tr><th>Tool</th><th>What it gives you</th><th>What it does not</th></tr></thead>
+    <tbody style="font-size:19px">
+      <tr><td class="name">parallax</td><td class="muted" style="font-size:19px">The set of parties whose dishonesty would change your answer, from a deployment file you wrote</td><td class="muted" style="font-size:19px">Nothing is verified. It computes over your description, not your deployment</td></tr>
+      <tr><td class="name">parallax-proxy</td><td class="muted" style="font-size:19px">Verifies a real Intel TDX quote, chain, TCB, revocation and key binding, and refuses the connection when the residual trust set violates policy</td><td class="muted" style="font-size:19px">Egress only. TDX only. RA-TLS only</td></tr>
+      <tr><td class="name">parallax-attest</td><td class="muted" style="font-size:19px">Puts an unmodified application behind RA-TLS on a GCP Confidential VM, extending RTMR3 so the quote covers your code, not just the firmware</td><td class="muted" style="font-size:19px">GCP only. Emits a certificate, not an evidence record</td></tr>
+      <tr><td class="name">transit</td><td class="muted" style="font-size:19px">Whether an endpoint satisfies the four effect-binding conditions, and a reproduction of what goes wrong when it does not. Offline, no credentials</td><td class="muted" style="font-size:19px">Classification is advisory. Probing third-party endpoints stays gated</td></tr>
+      <tr><td class="name">transit guard</td><td class="muted" style="font-size:19px">An enforcing reverse proxy that refuses requests failing those conditions, from a generated config</td><td class="muted" style="font-size:19px">Emits no evidence. It decides and forgets</td></tr>
+      <tr><td class="name">occultation + gateway</td><td class="muted" style="font-size:19px">What unlinkability costs at agent action rates, and a fail-open meter that tells a relying party what each live request gave away</td><td class="muted" style="font-size:19px">Provides no unlinkability. Two of five priced layers are modelled stubs. The gateway never rejects</td></tr>
+      <tr><td class="name">poc-audit</td><td class="muted" style="font-size:19px">Reads an evidence record and reports, per field, what actually backs the claim. The only tool that answers “where do I stand”</td><td class="muted" style="font-size:19px">Fills no field, signs nothing, prints no aggregate verdict</td></tr>
+    </tbody>
+  </table>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 19 · The one real property -->
+<section class="s" data-label="The one end-to-end property">
+  <p class="eyebrow">The pairing worth knowing about</p>
+  <h2 class="title" style="margin-bottom:12px">One place in the programme where an operator gets a real, end-to-end, <span class="mark">verified</span> property</h2>
+  <p class="lede" style="margin-bottom:40px">parallax-attest on the workload and parallax-proxy in front of the client is a deployable attestation path today, with no application changes on either side.</p>
+  <svg viewBox="0 0 1620 230" style="width:1620px;height:230px;overflow:visible;font-family:var(--font-sans)">
+    <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0A0A0A"/></marker></defs>
+    <line x1="0" y1="2" x2="1620" y2="2" stroke="#0A0A0A" stroke-width="2"/>
+    <text x="0" y="60" font-family="Jost" font-size="34" font-weight="500">Unmodified application</text>
+    <text x="0" y="96" font-size="18" fill="#6B6862">inside an Intel TDX trust domain on GCP C3</text>
+    <text x="0" y="150" font-size="16" letter-spacing="2" fill="#5A5751">PARALLAX-ATTEST</text>
+    <text x="0" y="180" font-size="18" fill="#3a382f">quotes once at start, extends RTMR3 with the workload digest,</text>
+    <text x="0" y="206" font-size="18" fill="#3a382f">serves RA-TLS with the quote bound to the key</text>
+    <line x1="560" y1="60" x2="720" y2="60" stroke="#0A0A0A" stroke-width="2" marker-end="url(#arr2)"/>
+    <text x="640" y="44" text-anchor="middle" font-size="15" letter-spacing="1.5" fill="#5A5751">RA-TLS</text>
+    <text x="740" y="60" font-family="Jost" font-size="34" font-weight="500">parallax-proxy</text>
+    <text x="740" y="96" font-size="18" fill="#6B6862">in front of the client, egress only</text>
+    <text x="740" y="150" font-size="16" letter-spacing="2" fill="#5A5751">VERIFIES</text>
+    <text x="740" y="180" font-size="18" fill="#3a382f">certificate chain · TCB status · revocation · key binding ·</text>
+    <text x="740" y="206" font-size="18" fill="#3a382f">MRTD and RTMR3 against reference values · residual trust set against policy</text>
+    <line x1="1300" y1="60" x2="1440" y2="60" stroke="#0A0A0A" stroke-width="2" marker-end="url(#arr2)"/>
+    <text x="1370" y="44" text-anchor="middle" font-size="15" letter-spacing="1.5" fill="#5A5751">OR REFUSES</text>
+    <text x="1460" y="60" font-family="Jost" font-size="34" font-weight="500">Client</text>
+    <text x="1460" y="96" font-size="18" fill="#6B6862">unchanged</text>
+  </svg>
+  <div class="metrics" style="margin-top:56px;grid-template-columns:repeat(4,1fr)">
+    <div><div class="v" style="font-size:72px">144</div><div class="l">tests in parallax, 28 commits, final whole-branch review clean</div></div>
+    <div><div class="v" style="font-size:72px">0.01 s</div><div class="l">to terminate a 300-node delegation cycle across two mechanism layers</div></div>
+    <div><div class="v" style="font-size:72px">1 ms</div><div class="l">for a 40-node complete graph, all 1,600 edges including self-loops</div></div>
+    <div><div class="v" style="font-size:72px">5</div><div class="l">self-authored deployments in the evidence base, and no real-world system yet</div></div>
+  </div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 20 · Eight findings -->
+<section class="s tight" data-label="Findings against the standard" style="padding-top:84px">
+  <p class="eyebrow">The programme’s actual output to the standard · docs/standard-findings.md</p>
+  <h2 class="title" style="margin-bottom:10px">Eight defects in the standard, found by trying to produce or check a record</h2>
+  <p class="lede" style="margin-bottom:18px">Six are invisible to the schema validator. Five produce a record that validates cleanly while failing to carry the property the field exists to provide.</p>
+  <table class="t compact">
+    <colgroup><col style="width:5%"><col style="width:30%"><col style="width:52%"><col style="width:13%"></colgroup>
+    <thead><tr><th>#</th><th>Where</th><th>Defect</th><th>Severity</th></tr></thead>
+    <tbody>
+      <tr><td class="muted">1</td><td class="name" style="font-family:var(--font-code);font-weight:400;font-size:19px">hardware-attested.json</td><td class="muted"><code>measurement</code> is 32 bytes; an Intel TDX MRTD is 48. The standard’s own strongest vector cannot be what it claims</td><td class="det">Blocking</td></tr>
+      <tr><td class="muted">2</td><td class="name" style="font-family:var(--font-code);font-weight:400;font-size:19px">$defs.digest</td><td class="muted">The pattern does not tie the algorithm tag to the length. <code>sha-384:</code> with 64 hex validates</td><td class="det">Blocking</td></tr>
+      <tr><td class="muted">3</td><td class="name" style="font-family:var(--font-code);font-weight:400;font-size:19px">chain_head</td><td class="muted">Chains three fields and leaves the rest of the record unprotected. Fix costs nothing: hash the whole canonical record</td><td class="det">Blocking</td></tr>
+      <tr><td class="muted">4</td><td class="name" style="font-family:var(--font-code);font-weight:400;font-size:19px">step_index / chain_head</td><td class="muted">Two sequences over the same records, and no statement of which chain</td><td class="det" style="font-weight:500;color:var(--ink-2)">High</td></tr>
+      <tr><td class="muted">5</td><td class="name" style="font-family:var(--font-code);font-weight:400;font-size:19px">interception_point</td><td class="muted">The enum has no value for C7.1.2’s “during”, and a gateway cannot witness an effect, only a dispatch</td><td class="det" style="font-weight:500;color:var(--ink-2)">High</td></tr>
+      <tr><td class="muted">6</td><td class="name" style="font-family:var(--font-code);font-weight:400;font-size:19px">agbom_digest</td><td class="muted">The schema says per step; the reference implementation ships a per-process constant</td><td class="det" style="font-weight:500;color:var(--ink-2)">High</td></tr>
+      <tr><td class="muted">7</td><td class="name" style="font-family:var(--font-code);font-weight:400;font-size:19px">C1.2.2</td><td class="muted">Requires a link nobody can compute: influence is why-provenance. Everyone meeting it today is meeting “was present in the context”</td><td class="det" style="font-weight:500;color:var(--ink-2)">High</td></tr>
+      <tr><td class="muted">8</td><td class="name" style="font-family:var(--font-code);font-weight:400;font-size:19px">nonce</td><td class="muted">Required, and nothing in the ecosystem issues one. A challenge minted by the challenged party defeats no replay</td><td class="det" style="font-weight:500;color:var(--ink-2)">High</td></tr>
+    </tbody>
+  </table>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 21 · Divider 04 -->
+<section class="s divider" data-label="Section 04" data-divider="19a" data-object="W13" style="padding:0">
+  <div class="obj"><div style="position:absolute;right:-8%;top:-46%;width:42%;height:132%;transform:rotate(21deg)"><svg viewBox="0 0 136 172" preserveAspectRatio="none" fill="currentColor"><polygon points="60,0 0,150 96,150" fill-opacity="0.45"/><polygon points="60,0 96,150 136,172 100,22" fill-opacity="0.30"/><polygon points="0,150 96,150 136,172 40,172" fill-opacity="0.15"/></svg></div></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">04</p><h2>The roadmap</h2><p class="stand">What gets built, in order.</p></div>
+  <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
+</section>
+
+<!-- 22 · Phases -->
+<section class="s tight" data-label="Roadmap · phases">
+  <p class="eyebrow">Sequence, not schedule · the roadmap states effort, not dates</p>
+  <h2 class="title" style="margin-bottom:24px;font-size:44px;max-width:40ch">Five phases, each pairing papers with the tool that answers them</h2>
+  <div class="bands">
+    <div class="band"><p class="o">01</p><div><p class="ph">Done</p><p class="pp">P01 · P02 · P05</p></div><div><p class="what">The corrective work, and the largest open design question</p><p class="why">Trust calculus, effect binding, unlinkable identity. Shipped as parallax, transit and occultation, with poc-audit drawing the map of what remains.</p></div></div>
+    <div class="band"><p class="o">02</p><div><p class="ph">Do cheaply, soon</p><p class="pp">P03 · P04 · P08 → T5 · T2</p></div><div><p class="what">Small effort, existing apparatus, one correction to a claim in print</p><p class="why">Attestation freshness feeds parallax’s challenge and staleness bound. Log concurrency is answered by building ephemeris, the recorder that closes thirteen fields.</p></div></div>
+    <div class="band"><p class="o">03</p><div><p class="ph">The real research</p><p class="pp">P06 · P07 → T6 · T3</p></div><div><p class="what">Delegation without amplification, and evidence that survives a boundary</p><p class="why">The delegation chain stays unnamed until P06 says what it must guarantee. transit guard learns to write down the three fields it already computes.</p></div></div>
+    <div class="band"><p class="o">04</p><div><p class="ph">Longer horizon</p><p class="pp">P09 · P10 → T4</p></div><div><p class="what">Zero-knowledge evidence, and what belongs in an agent bill of materials</p><p class="why">spectrum digests a declared component set and expects a negative result. P09 would replace the record rather than fill a row in it.</p></div></div>
+    <div class="band"><p class="o">05</p><div><p class="ph">Institutional</p><p class="pp">P11 · P12 → no tool</p></div><div><p class="what">Who pays for verification, and why assurance regimes fail</p><p class="why">Ranked last because they are not technical, and possibly more determinative of adoption than anything above them.</p></div></div>
+  </div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 23 · Two conflicts (split) -->
+<section class="s split" data-label="Two conflicts">
+  <div class="l"><p class="eyebrow">Both real, both load-bearing</p><h2 style="font-family:var(--font-display);font-weight:500;font-size:72px;line-height:1.06;letter-spacing:-.02em;margin:0;max-width:12ch;text-wrap:balance">Two conflicts we have not resolved</h2><p style="font-family:var(--font-text);font-size:26px;line-height:1.45;color:var(--ink-2);margin:40px 0 0;max-width:30ch">Both get worse the moment the recorder exists. Neither has an answer in the roadmap, and building converts each from a footnote into a decision somebody has to make.</p></div>
+  <div class="r">
+    <h3>The chain links everything</h3>
+    <p><code>chain_head</code> and <code>merkle_root</code> link every action by an agent to every other one, by construction. That is precisely the property occultation exists to measure the loss of, and P05 argues it should not be assumed. Building ephemeris means shipping the thing the programme’s own research argues against.</p>
+    <h3>Fail-open against fail-closed</h3>
+    <p>parallax-proxy and transit guard refuse requests. occultation-gateway never does, and that guarantee was defended across eight tasks of review: a meter must not be able to take down the API it fronts. Composing all three in one request path has no agreed answer.</p>
+  </div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 24 · Where this is most likely wrong -->
+<section class="s" data-label="Where this is most likely wrong">
+  <p class="eyebrow">Written down so it can be argued with rather than absorbed</p>
+  <h2 class="title" style="margin-bottom:40px">Four places the prioritization is most likely wrong</h2>
+  <div class="list">
+    <div class="row"><span class="i">01</span><span class="h">P11 and P12 may be underrated</span><span class="d">Certificate Transparency succeeded because browsers mandated it, not because the Merkle tree was elegant. If adoption is decided by institutions, the most important paper here is ranked tenth.</span></div>
+    <div class="row"><span class="i">02</span><span class="h">P05 may be overrated per effort</span><span class="d">A large cryptographic undertaking with a real chance of a negative result. The measurement half is small and decisive, and was done first for that reason.</span></div>
+    <div class="row"><span class="i">03</span><span class="h">P04 may be too small to be a paper</span><span class="d">Ranked fourth on importance, not on publishability. It may be a section of a stronger paper on bounded runtime monitors, or simply a correction.</span></div>
+    <div class="row"><span class="i">04</span><span class="h">The corrective bias</span><span class="d">Three of the top four fix our own errors. Somebody without our history would rank P05 and P06 higher: a specification’s errors matter more to its authors than to anyone else.</span></div>
+  </div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 25 · Divider 05 -->
+<section class="s divider" data-label="Section 05" data-divider="19b·r" data-object="W14" style="padding:0">
+  <div class="obj"><div style="position:absolute;right:2%;top:-24%;width:56%;height:118%;transform:rotate(-14deg)"><svg viewBox="0 0 200 218" preserveAspectRatio="none" fill="currentColor"><polygon points="0,98 150,58 70,218" fill-opacity="0.45"/><polygon points="0,98 150,58 200,0 50,40" fill-opacity="0.15"/><polygon points="150,58 70,218 120,160 200,0" fill-opacity="0.30"/></svg></div></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">05</p><h2>The asks</h2><p class="stand">Where the programme needs other hands.</p></div>
+  <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
+</section>
+
+<!-- 26 · Asks -->
+<section class="s tight" data-label="Five asks">
+  <p class="eyebrow">Five asks, each traceable to a gap the roadmap names</p>
+  <h2 class="title" style="margin-bottom:36px">What we need from the room</h2>
+  <div class="list">
+    <div class="row"><span class="i">01</span><span class="h">Take a paper</span><span class="d">Nine are unwritten, and each file is scoped to be handed straight to a research pass. P03, P04 and P08 are weeks of work on apparatus that already exists.</span></div>
+    <div class="row"><span class="i">02</span><span class="h">Run it on a real system</span><span class="d">The evidence base is five self-authored deployments. Put parallax-attest on a workload, parallax-proxy in front of a client, and run poc-audit on the records you already have.</span></div>
+    <div class="row"><span class="i">03</span><span class="h">Lend hardware beyond one cloud</span><span class="d">Every number is Intel TDX on GCP c3-standard-4. P03 needs the quote cost decomposed on more platforms, and the apparatus already deploys, measures and tears down.</span></div>
+    <div class="row"><span class="i">04</span><span class="h">Decide what code cannot</span><span class="d">Log granularity, the chain against unlinkability, fail-open against fail-closed. These are working-group decisions, and the eight findings are drafted and waiting to be filed upstream.</span></div>
+    <div class="row"><span class="i">05</span><span class="h"><span class="mark">Argue with</span> the priorities</span><span class="d">The order is one person’s assessment, written down to be contested. If you would rank P05 and P06 above the corrections, say so and we will change it.</span></div>
+  </div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- 27 · Join -->
+<section class="s center" data-label="Join" data-divider="19c·r" data-object="W15" style="padding:0 150px">
+  <div style="position:absolute;inset:0;color:var(--aais-cinnabar);pointer-events:none"><div style="position:absolute;right:-12%;top:-10%;width:71.28%;height:129.6%;transform:rotate(-11deg)"><svg viewBox="0 0 214 148" preserveAspectRatio="none" fill="currentColor" style="width:100%;height:100%;display:block"><polygon points="214,0 214,140 34,90" fill-opacity="0.45"/><polygon points="214,0 34,90 0,98 180,8" fill-opacity="0.15"/><polygon points="214,140 34,90 0,98 180,148" fill-opacity="0.30"/></svg></div></div>
+  <p class="eyebrow" style="position:relative;z-index:2">Join us</p>
+  <h2 style="font-family:var(--font-display);font-weight:500;font-size:64px;line-height:1.09;letter-spacing:-.01em;margin:0 0 44px;max-width:22ch;position:relative;z-index:2;text-wrap:balance">Every one of these has something to build, not only something to argue.</h2>
+  <p style="font-family:var(--font-text);font-size:32px;line-height:1.5;margin:0;max-width:34ch;color:var(--ink-2);position:relative;z-index:2"><span class="poc">Proof-of-Control</span> is stewarded by the Advanced AI Society. Join a working group and take one of the twelve.</p>
+  <p style="font-family:var(--font-sans);font-size:20px;letter-spacing:.04em;color:var(--aais-black);margin:40px 0 0;position:relative;z-index:2">advancedaisociety.org · github.com/AAI-Society/ov-poc-standard</p>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+</div>
+<div class="hud" id="hud">← → to move · Home / End · F for fullscreen · ⌘P prints one slide per page</div>
+
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.s'));
+  var stage=document.getElementById('stage');
+  var i=0, hudTimer;
+  function fit(){
+    var s=Math.min(window.innerWidth/1920, window.innerHeight/1080);
+    stage.style.transform='translate(-50%,-50%) scale('+s+')';
+  }
+  function show(n){
+    n=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach(function(el,k){ el.classList.toggle('on',k===n); });
+    i=n;
+    try{ history.replaceState(null,'','#'+(n+1)); }catch(e){}
+    document.title='Proof-of-Control Research Agenda · '+(n+1)+' / '+slides.length;
+    slides.forEach(function(el,k){ var c=el.querySelector('.foot .n'); if(c) c.textContent=String(k+1).padStart(2,'0'); });
+  }
+  function hud(){
+    document.body.classList.add('showhud');
+    clearTimeout(hudTimer);
+    hudTimer=setTimeout(function(){document.body.classList.remove('showhud')},2500);
+  }
+  window.addEventListener('resize',fit);
+  window.addEventListener('keydown',function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey) return;
+    switch(e.key){
+      case 'ArrowRight': case 'ArrowDown': case ' ': case 'PageDown': show(i+1); e.preventDefault(); break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp': show(i-1); e.preventDefault(); break;
+      case 'Home': show(0); e.preventDefault(); break;
+      case 'End': show(slides.length-1); e.preventDefault(); break;
+      case 'f': case 'F':
+        if(document.fullscreenElement){ document.exitFullscreen && document.exitFullscreen(); }
+        else if(document.documentElement.requestFullscreen){ document.documentElement.requestFullscreen().catch(function(){}); }
+        break;
+      default: return;
+    }
+    hud();
+  });
+  stage.addEventListener('click',function(e){
+    if(e.target.closest('a')) return;
+    var r=stage.getBoundingClientRect();
+    show(e.clientX < r.left + r.width/2 ? i-1 : i+1);
+  });
+  window.addEventListener('mousemove',hud);
+  var h=parseInt((location.hash||'').replace('#',''),10);
+  fit();
+  show(isNaN(h)?0:h-1);
+  hud();
+})();
+</script>
+</body>
+</html>
