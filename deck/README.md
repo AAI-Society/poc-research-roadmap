@@ -7,8 +7,8 @@ embedded, so both present offline.
 
 | File | Audience | Slides |
 | --- | --- | :--: |
-| `research-agenda.html` | Researchers and working-group members. Field-level detail, paper IDs, tool names. | 31 |
-| `research-agenda-for-security-leaders.html` | CISOs and executives. One idea per slide, a picture on each: the receipt, the four rungs, who you are still trusting, what you could switch on today. | 28 |
+| `research-agenda.html` | Researchers and working-group members. Field-level detail, paper IDs, tool names. | 37 |
+| `research-agenda-for-security-leaders.html` | CISOs and executives. One idea per slide, a picture on each: the receipt, the four rungs, who you are still trusting, what you could switch on today. | 33 |
 
 **Present:** open the file in a browser. ← → or Space to move, Home / End, F for fullscreen,
 click the right or left half of the slide. `#12` in the URL jumps to a slide.
