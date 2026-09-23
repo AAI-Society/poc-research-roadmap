@@ -286,10 +286,38 @@
   <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
 </section>
 
+<!-- Divider · The landscape -->
+<section class="s divider" data-label="Section 04" data-divider="18a" data-object="B11" style="padding:0">
+  <div class="obj"><div style="position:absolute;right:-11%;bottom:-38%;width:70.2%;height:136%;transform:rotate(-3.5deg)"><svg viewBox="0 0 74.83 81.59" preserveAspectRatio="none" fill="currentColor"><polygon points="20.23,4.73 53.9,0 74.83,26.79 41.16,31.52" fill-opacity="0.15"/><polygon points="74.83,26.79 41.16,31.52 20.93,81.59 54.6,76.86" fill-opacity="0.45"/><polygon points="41.16,31.52 20.23,4.73 0,54.8 20.93,81.59" fill-opacity="0.30"/></svg></div></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">04</p><h2>The landscape</h2><p class="stand">Whose shoulders this work stands on.</p></div>
+  <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
+</section>
+
+<!-- Landscape · what exists -->
+<section class="s tight" data-label="Landscape · what exists" style="padding-top:96px">
+  <p class="eyebrow">Nobody builds this alone</p>
+  <h2 class="title" style="margin-bottom:10px">Six things already exist. The receipt is what joins them.</h2>
+  <p class="lede" style="margin-bottom:22px">Each solves its own problem well. None produces a signed, checkable record of what an agent did.</p>
+  <table class="t compact">
+    <colgroup><col style="width:28%"><col style="width:36%"><col style="width:36%"></colgroup>
+    <thead><tr><th>Layer</th><th>What it gives</th><th>What it leaves open</th></tr></thead>
+    <tbody><tr><td class="name">Proof of what code ran<span style="display:block;font-family:var(--font-sans);font-weight:400;font-size:16px;color:var(--ink-3);margin-top:6px;line-height:1.35">Confidential computing and remote attestation</span></td><td class="muted">A chip signs a statement about the software it is running</td><td class="muted">Says nothing about whether that software obeyed the rules</td></tr><tr><td class="name">Tamper-evident logs<span style="display:block;font-family:var(--font-sans);font-weight:400;font-size:16px;color:var(--ink-3);margin-top:6px;line-height:1.35">Transparency logs, as used to police web certificates</span></td><td class="muted">Records that cannot be quietly rewritten</td><td class="muted">Built for certificates and software releases, not agent actions</td></tr><tr><td class="name">Who is allowed to do what<span style="display:block;font-family:var(--font-sans);font-weight:400;font-size:16px;color:var(--ink-3);margin-top:6px;line-height:1.35">Modern authorization tokens and agent identity schemes</span></td><td class="muted">Granting and narrowing authority, proving identity</td><td class="muted">No evidence afterwards that the grant was honoured</td></tr><tr><td class="name">Where to intercept<span style="display:block;font-family:var(--font-sans);font-weight:400;font-size:16px;color:var(--ink-3);margin-top:6px;line-height:1.35">Vendor and industry runtime-control specifications</span></td><td class="muted">The eight moments in an agent’s life where a check can happen</td><td class="muted">The check lives inside the runtime it is checking, and writes no receipt</td></tr><tr><td class="name">Watching it run<span style="display:block;font-family:var(--font-sans);font-weight:400;font-size:16px;color:var(--ink-3);margin-top:6px;line-height:1.35">Observability and tracing standards</span></td><td class="muted">Rich operational telemetry</td><td class="muted">The system under scrutiny writes its own log</td></tr><tr><td class="name">Governance frameworks<span style="display:block;font-family:var(--font-sans);font-weight:400;font-size:16px;color:var(--ink-3);margin-top:6px;line-height:1.35">NIST AI RMF · ISO/IEC 42001 · SOC 2</span></td><td class="muted">Process, policy and periodic attestation</td><td class="muted">Proof about one agent, in one session, that anyone can check</td></tr></tbody>
+  </table>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
+<!-- Landscape · credits -->
+<section class="s tight" data-label="Landscape · credits">
+  <p class="eyebrow">Say their names</p>
+  <h2 class="title" style="margin-bottom:24px">The work this builds on, and what each gave</h2>
+  <div class="list"><div class="row" style="padding:16px 0;grid-template-columns:64px 480px 1fr"><span class="i"></span><span class="h" style="font-size:28px">IETF RATS working group</span><span class="d" style="font-size:20px">Gave the field a formal grammar for hardware attestation and claims tokens. Proof-of-Control uses it to prove the interceptor itself runs in confidential hardware.</span></div><div class="row" style="padding:16px 0;grid-template-columns:64px 480px 1fr"><span class="i"></span><span class="h" style="font-size:28px">Sigstore and Trillian</span><span class="d" style="font-size:20px">Proved that verification scales through append-only transparency logs. Proof-of-Control turns static artifact signing into continuous action logging.</span></div><div class="row" style="padding:16px 0;grid-template-columns:64px 480px 1fr"><span class="i"></span><span class="h" style="font-size:28px">The Biscuit community</span><span class="d" style="font-size:20px">Pioneered offline cryptographic attenuation with embedded Datalog. Proof-of-Control leans on it so an agent can never delegate more than it was granted.</span></div><div class="row" style="padding:16px 0;grid-template-columns:64px 480px 1fr"><span class="i"></span><span class="h" style="font-size:28px">Microsoft Responsible AI, Agent Hooks</span><span class="d" style="font-size:20px">Named the lifecycle moments where an agent can be intercepted. Proof-of-Control moves that in-process contract out of process and makes it non-bypassable.</span></div><div class="row" style="padding:16px 0;grid-template-columns:64px 480px 1fr"><span class="i"></span><span class="h" style="font-size:28px">Cloud Security Alliance, AARM</span><span class="d" style="font-size:20px">Defined the runtime policy framework for approving, modifying or denying agent tool calls. Proof-of-Control is the ledger that proves those decisions were carried out.</span></div><div class="row" style="padding:16px 0;grid-template-columns:64px 480px 1fr"><span class="i"></span><span class="h" style="font-size:28px">Catalini, Hui and Wu</span><span class="d" style="font-size:20px">Formalized why verification becomes the scarce resource as the cost of doing collapses. The economic argument this programme rests on.</span></div></div>
+  <div class="foot"><svg class="lockup"><use href="#lockup"/></svg><span class="n"></span></div>
+</section>
+
 <!-- 19 · Divider 04 -->
-<section class="s divider" data-label="Section 04" data-divider="19a" data-object="W13" style="padding:0">
+<section class="s divider" data-label="Section 05" data-divider="19a" data-object="W13" style="padding:0">
   <div class="obj"><div style="position:absolute;right:-8%;top:-46%;width:42%;height:132%;transform:rotate(21deg)"><svg viewBox="0 0 136 172" preserveAspectRatio="none" fill="currentColor"><polygon points="60,0 0,150 96,150" fill-opacity="0.45"/><polygon points="60,0 96,150 136,172 100,22" fill-opacity="0.30"/><polygon points="0,150 96,150 136,172 40,172" fill-opacity="0.15"/></svg></div></div>
-  <div class="col"><p class="sec">Section</p><p class="ord">04</p><h2>The roadmap</h2><p class="stand">What comes next, in order.</p></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">05</p><h2>The roadmap</h2><p class="stand">What comes next, in order.</p></div>
   <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
 </section>
 
@@ -362,9 +390,9 @@
 </section>
 
 <!-- 22 · Divider 05 -->
-<section class="s divider" data-label="Section 05" data-divider="19b·r" data-object="W14" style="padding:0">
+<section class="s divider" data-label="Section 06" data-divider="19b·r" data-object="W14" style="padding:0">
   <div class="obj"><div style="position:absolute;right:2%;top:-24%;width:56%;height:118%;transform:rotate(-14deg)"><svg viewBox="0 0 200 218" preserveAspectRatio="none" fill="currentColor"><polygon points="0,98 150,58 70,218" fill-opacity="0.45"/><polygon points="0,98 150,58 200,0 50,40" fill-opacity="0.15"/><polygon points="150,58 70,218 120,160 200,0" fill-opacity="0.30"/></svg></div></div>
-  <div class="col"><p class="sec">Section</p><p class="ord">05</p><h2>The asks</h2><p class="stand">Where your experience is the missing input.</p></div>
+  <div class="col"><p class="sec">Section</p><p class="ord">06</p><h2>The asks</h2><p class="stand">Where your experience is the missing input.</p></div>
   <div style="position:absolute;left:150px;bottom:44px;z-index:5"><svg class="lockup"><use href="#lockup"/></svg></div>
 </section>
 
